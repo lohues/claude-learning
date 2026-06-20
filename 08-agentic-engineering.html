@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Operator's Path · 08 Agentic Engineering</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F2EEE6; --paper-2:#E8E1D4; --panel:#FBF9F4;
+    --ink:#1B1915; --slate:#6E665A; --slate-2:#928979;
+    --clay:#C96442; --clay-deep:#A84E30; --clay-soft:#F0D9CE;
+    --signal:#2E6E5B; --signal-soft:#D6E6DF;
+    --amber:#C98A1F; --amber-soft:#F2E3C4;
+    --deny:#A23C3C; --deny-soft:#EFD7D3;
+    --violet:#6E5A96; --violet-soft:#E2DBEE;
+    --term-bg:#16140F; --term-fg:#ECE6D8; --term-dim:#8E8674;
+    --line:#D8D0C0; --line-strong:#C4BAA6;
+    --display:"Bricolage Grotesque",serif;
+    --body:"IBM Plex Sans",sans-serif;
+    --mono:"JetBrains Mono",monospace;
+    --r:14px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0; background:var(--paper); color:var(--ink); font-family:var(--body); font-size:17px; line-height:1.62; -webkit-font-smoothing:antialiased}
+  ::selection{background:var(--clay-soft)}
+  a{color:var(--clay-deep)}
+  .wrap{max-width:1180px; margin:0 auto; padding:0 24px}
+
+  .topbar{position:sticky; top:0; z-index:50; background:rgba(242,238,230,.86); backdrop-filter:blur(10px); border-bottom:1px solid var(--line)}
+  .topbar-in{display:flex; align-items:center; gap:18px; height:60px}
+  a.brand{font-family:var(--mono); font-weight:700; font-size:14px; letter-spacing:.04em; display:flex; align-items:center; gap:9px; text-decoration:none; color:inherit}
+  .brand .dot{width:11px; height:11px; border-radius:50%; background:var(--clay); box-shadow:0 0 0 3px var(--clay-soft)}
+  .topbar .meta{margin-left:auto; font-family:var(--mono); font-size:12px; color:var(--slate); letter-spacing:.03em}
+  .pbar{height:3px; background:var(--paper-2)}
+  .pbar > i{display:block; height:100%; width:0; background:linear-gradient(90deg,var(--clay),var(--clay-deep)); transition:width .5s cubic-bezier(.4,0,.2,1)}
+
+  /* ---------- sidebar nav ---------- */
+  .navtoggle{display:inline-flex; align-items:center; justify-content:center; width:38px; height:38px; border:1px solid var(--line); border-radius:10px; background:var(--paper); color:var(--ink); cursor:pointer; padding:0; flex:0 0 auto}
+  .navtoggle span{display:block; width:17px; height:2px; background:currentColor; border-radius:2px; position:relative}
+  .navtoggle span::before,.navtoggle span::after{content:""; position:absolute; left:0; width:17px; height:2px; background:currentColor; border-radius:2px}
+  .navtoggle span::before{top:-5px} .navtoggle span::after{top:5px}
+  .sidenav{position:fixed; top:0; left:0; bottom:0; width:250px; z-index:70; background:var(--panel); border-right:1px solid var(--line); display:flex; flex-direction:column; padding:18px 14px; overflow-y:auto; transform:translateX(-100%); transition:transform .25s ease}
+  .sidenav.open{transform:none}
+  .sidehead{display:flex; align-items:center; gap:9px; font-family:var(--mono); font-weight:700; font-size:13px; letter-spacing:.04em; text-decoration:none; color:inherit; padding:4px 8px 14px; border-bottom:1px solid var(--line); margin-bottom:12px}
+  .sidehead .dot{width:11px; height:11px; border-radius:50%; background:var(--clay); box-shadow:0 0 0 3px var(--clay-soft); flex:0 0 auto}
+  .sidenav-list{display:flex; flex-direction:column; gap:4px}
+  .mp{display:flex; align-items:center; gap:10px; text-decoration:none; padding:9px 12px; border-radius:10px; border:1px solid transparent; background:transparent; color:var(--slate); font-family:var(--mono); font-size:12.5px; white-space:nowrap; transition:.15s}
+  .mp:hover{background:var(--paper); color:var(--ink)}
+  .mp .mpn{font-weight:700; flex:0 0 auto; width:22px; text-align:center}
+  .mp .mpl{font-size:12px}
+  .mp.current{background:var(--clay-soft); border-color:var(--clay); color:var(--clay-deep)}
+  .mp.off{opacity:.42; pointer-events:none}
+  .mp.home .mpn{color:var(--clay)}
+  .navscrim{position:fixed; inset:0; background:rgba(20,18,14,.42); z-index:65; opacity:0; pointer-events:none; transition:opacity .25s}
+  .navscrim.open{opacity:1; pointer-events:auto}
+  @media(min-width:1100px){
+    .sidenav{transform:none}
+    body{padding-left:250px}
+    .navtoggle{display:none}
+    .navscrim{display:none}
+  }
+
+  .hero{padding:58px 0 16px}
+  .eyebrow{font-family:var(--mono); font-size:12.5px; letter-spacing:.18em; text-transform:uppercase; color:var(--clay-deep); font-weight:500}
+  .hero h1{font-family:var(--display); font-weight:800; line-height:1.03; font-size:clamp(38px,6.2vw,66px); letter-spacing:-.02em; margin:14px 0 0}
+  .hero h1 .thin{font-weight:400; color:var(--slate)}
+  .hero p.lede{font-size:20px; color:var(--slate); max-width:60ch; margin:18px 0 0}
+
+  /* ---------- five pillars map (signature) ---------- */
+  .pillars{background:var(--panel); border:1px solid var(--line-strong); border-radius:20px; padding:24px 26px 26px; margin:36px 0 6px; box-shadow:0 20px 50px -34px rgba(0,0,0,.4)}
+  .plabel{font-family:var(--mono); font-size:12px; letter-spacing:.1em; text-transform:uppercase; color:var(--slate); margin-bottom:6px; display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap}
+  .plabel .note{color:var(--slate-2); text-transform:none; letter-spacing:0}
+  .prow{display:grid; grid-template-columns:repeat(5,1fr); gap:8px; margin-top:14px}
+  @media(max-width:680px){.prow{grid-template-columns:repeat(2,1fr)}}
+  .pil{font:inherit; cursor:pointer; border:1px solid var(--line-strong); background:var(--paper); border-radius:12px; padding:14px 10px; text-align:center; transition:.18s; position:relative}
+  .pil:hover{border-color:var(--clay); transform:translateY(-2px)}
+  .pil .pnum{font-family:var(--mono); font-size:11px; font-weight:700; color:var(--slate-2)}
+  .pil .pname{font-family:var(--display); font-weight:700; font-size:14px; line-height:1.15; margin-top:5px}
+  .pil .ptag{font-family:var(--mono); font-size:9.5px; letter-spacing:.03em; text-transform:uppercase; color:var(--slate-2); margin-top:5px}
+  .pil.active{border-color:var(--clay); background:#fff; box-shadow:0 0 0 3px var(--clay-soft)}
+  .pil.active .pname{color:var(--clay-deep)}
+  .pdetail{margin-top:18px; border:1px solid var(--line); border-radius:14px; padding:20px; background:var(--paper)}
+  .pdetail .pd-name{font-family:var(--display); font-weight:800; font-size:22px; letter-spacing:-.01em; margin:0}
+  .pdetail .pd-def{font-size:15.5px; color:var(--ink); margin:10px 0 0}
+  .pdetail .pd-chal{font-family:var(--mono); font-size:12.5px; color:var(--deny); margin-top:12px}
+  .pdetail .pd-chal b{color:var(--deny)}
+  .pdetail .pd-mods{display:flex; flex-wrap:wrap; gap:8px; margin-top:14px; align-items:center}
+  .pdetail .pd-mods .ml{font-family:var(--mono); font-size:11px; letter-spacing:.05em; text-transform:uppercase; color:var(--slate-2); margin-right:2px}
+  .modlink{text-decoration:none; font-family:var(--mono); font-size:12px; padding:6px 11px; border-radius:8px; border:1px solid var(--clay); background:var(--clay-soft); color:var(--clay-deep); transition:.15s}
+  .modlink:hover{background:var(--clay); color:#fff}
+  .modlink.here{background:var(--signal-soft); border-color:var(--signal); color:var(--signal)}
+  .modlink.here:hover{background:var(--signal); color:#fff}
+
+  section.block{padding:52px 0; border-top:1px solid var(--line)}
+  .sec-head{display:flex; align-items:baseline; gap:16px; margin-bottom:6px}
+  .sec-num{font-family:var(--mono); font-size:13px; color:var(--clay-deep); font-weight:700; letter-spacing:.05em}
+  .sec-head h2{font-family:var(--display); font-weight:800; font-size:clamp(26px,4vw,38px); letter-spacing:-.01em; margin:0}
+  .sec-sub{color:var(--slate); max-width:62ch; margin:10px 0 28px; font-size:17px}
+  .module-intro{display:flex; flex-wrap:wrap; gap:10px; margin-bottom:8px}
+  .chip{font-family:var(--mono); font-size:12px; padding:5px 11px; border-radius:99px; border:1px solid var(--line-strong); color:var(--slate); background:var(--panel)}
+  .chip.live{color:var(--signal); border-color:var(--signal); background:var(--signal-soft)}
+  .chip.frame{color:var(--violet); border-color:var(--violet); background:var(--violet-soft)}
+
+  .lesson{background:var(--panel); border:1px solid var(--line); border-radius:var(--r); padding:26px 28px; margin:18px 0; position:relative}
+  .lesson h3{font-family:var(--display); font-weight:800; font-size:23px; letter-spacing:-.01em; margin:0 0 4px; padding-right:120px}
+  .lesson .lead{color:var(--slate); margin:0 0 16px; font-size:16px}
+  .lesson p{margin:14px 0}
+  .lesson ul{margin:14px 0; padding-left:0; list-style:none}
+  .lesson ul li{position:relative; padding-left:26px; margin:9px 0}
+  .lesson ul li::before{content:"›"; position:absolute; left:6px; top:-1px; color:var(--clay); font-weight:700; font-family:var(--mono)}
+  .lesson strong{font-weight:600}
+  code.inl{font-family:var(--mono); font-size:.86em; background:var(--paper-2); padding:2px 6px; border-radius:5px; color:var(--clay-deep)}
+
+  /* flywheel */
+  .flywheel{display:flex; gap:18px; align-items:center; flex-wrap:wrap; justify-content:center; margin:18px 0}
+  .flywheel svg{flex:0 0 auto}
+  .flw-step{font-family:var(--mono); font-size:12px; fill:var(--ink); text-anchor:middle; font-weight:700}
+  .flw-sub{font-family:var(--mono); font-size:9px; fill:var(--slate); text-anchor:middle}
+
+  .done-toggle{position:absolute; top:24px; right:26px; font:inherit; font-family:var(--mono); font-size:12px; letter-spacing:.03em; padding:7px 13px; border-radius:99px; border:1px solid var(--line-strong); background:var(--paper); color:var(--slate); cursor:pointer; transition:.2s; display:flex; gap:7px; align-items:center}
+  .done-toggle:hover{border-color:var(--clay)}
+  .done-toggle .box{width:13px; height:13px; border-radius:4px; border:1.5px solid var(--slate-2); display:grid; place-items:center}
+  .done-toggle.done{background:var(--signal-soft); border-color:var(--signal); color:var(--signal)}
+  .done-toggle.done .box{background:var(--signal); border-color:var(--signal)}
+  .done-toggle.done .box::after{content:"✓"; color:#fff; font-size:10px; line-height:1}
+  @media(max-width:620px){.done-toggle{position:static; margin-bottom:14px} .lesson h3{padding-right:0}}
+
+  .term{background:var(--term-bg); border-radius:12px; overflow:hidden; margin:18px 0; box-shadow:0 14px 40px -22px rgba(0,0,0,.55)}
+  .term-bar{display:flex; align-items:center; gap:7px; padding:11px 15px; background:#211E17; border-bottom:1px solid #2c2820}
+  .term-bar i{width:11px; height:11px; border-radius:50%; background:#3a352b; display:block}
+  .term-bar i:nth-child(1){background:#C96442}
+  .term-bar .ttl{margin-left:8px; font-family:var(--mono); font-size:11.5px; color:var(--term-dim); letter-spacing:.03em}
+  .term-bar .copy{margin-left:auto; font-family:var(--mono); font-size:11px; color:var(--term-dim); background:none; border:1px solid #322d24; border-radius:6px; padding:4px 9px; cursor:pointer; transition:.15s}
+  .term-bar .copy:hover{color:var(--term-fg); border-color:#4a4438}
+  .term pre{margin:0; padding:18px; overflow-x:auto; font-family:var(--mono); font-size:13px; line-height:1.7; color:var(--term-fg)}
+  .term .pr{color:var(--clay)} .term .cm{color:var(--term-dim)} .term .ok{color:#7FB59E} .term .em{color:#E3B23C} .term .key{color:#9FB6D8} .term .str{color:#C9A876}
+
+  .callout{border-radius:12px; padding:16px 18px; margin:18px 0; border:1px solid; font-size:15.5px}
+  .callout .ch{font-family:var(--mono); font-size:11.5px; letter-spacing:.1em; text-transform:uppercase; font-weight:700; display:block; margin-bottom:5px}
+  .callout p{margin:6px 0 0}
+  .callout.gotcha{background:var(--amber-soft); border-color:#E0C079} .callout.gotcha .ch{color:var(--amber)}
+  .callout.note{background:var(--signal-soft); border-color:#A9CEC1} .callout.note .ch{color:var(--signal)}
+  .callout.frame{background:var(--violet-soft); border-color:#C0B3DC} .callout.frame .ch{color:var(--violet)}
+
+  details.deep{border:1px solid var(--line); border-radius:12px; margin:16px 0; background:var(--panel); overflow:hidden}
+  details.deep summary{cursor:pointer; padding:15px 18px; font-family:var(--mono); font-size:13px; font-weight:500; letter-spacing:.02em; color:var(--clay-deep); list-style:none; display:flex; align-items:center; gap:9px}
+  details.deep summary::-webkit-details-marker{display:none}
+  details.deep summary .pl{transition:.2s; font-weight:700}
+  details.deep[open] summary .pl{transform:rotate(45deg)}
+  details.deep .inside{padding:0 18px 18px; border-top:1px solid var(--line)}
+  details.deep .inside p:first-child{margin-top:14px}
+
+  .tasks{list-style:none; padding:0; margin:16px 0}
+  .tasks li{display:flex; gap:13px; align-items:flex-start; padding:13px 15px; border:1px solid var(--line); border-radius:10px; margin:8px 0; background:var(--panel); cursor:pointer; transition:.15s}
+  .tasks li:hover{border-color:var(--line-strong)}
+  .tasks li .tick{width:22px; height:22px; border-radius:7px; border:2px solid var(--slate-2); flex:0 0 auto; margin-top:1px; display:grid; place-items:center; transition:.2s}
+  .tasks li.done{background:var(--signal-soft); border-color:#A9CEC1}
+  .tasks li.done .tick{background:var(--signal); border-color:var(--signal)}
+  .tasks li.done .tick::after{content:"✓"; color:#fff; font-size:13px}
+  .tasks li.done .tk{text-decoration:line-through; color:var(--slate)}
+  .tasks li .tk{font-size:15.5px}
+  .tasks li .tk small{display:block; font-family:var(--mono); font-size:12px; color:var(--slate); margin-top:2px; text-decoration:none}
+
+  .quiz{background:linear-gradient(180deg,var(--panel),var(--paper)); border:1px solid var(--line-strong); border-radius:var(--r); padding:26px 28px; margin:24px 0}
+  .quiz .qh{font-family:var(--mono); font-size:12px; letter-spacing:.12em; text-transform:uppercase; color:var(--clay-deep); font-weight:700}
+  .quiz .q{font-family:var(--display); font-weight:600; font-size:20px; margin:8px 0 16px}
+  .opt{display:block; width:100%; text-align:left; font:inherit; font-size:15.5px; background:var(--paper); border:1px solid var(--line-strong); border-radius:10px; padding:13px 16px; margin:9px 0; cursor:pointer; transition:.15s; display:flex; gap:11px; align-items:center}
+  .opt:hover{border-color:var(--clay)}
+  .opt .lt{font-family:var(--mono); font-weight:700; color:var(--slate); width:18px; flex:0 0 auto}
+  .opt.correct{background:var(--signal-soft); border-color:var(--signal); color:var(--signal)} .opt.correct .lt{color:var(--signal)}
+  .opt.wrong{background:var(--deny-soft); border-color:var(--deny); color:var(--deny)} .opt.wrong .lt{color:var(--deny)}
+  .opt:disabled{cursor:default}
+  .verdict{margin-top:14px; font-size:15px; padding:13px 16px; border-radius:10px; display:none}
+  .verdict.show{display:block}
+  .verdict.right{background:var(--signal-soft); color:var(--signal)}
+  .verdict.nope{background:var(--amber-soft); color:var(--amber)}
+
+  .pager{display:flex; justify-content:space-between; gap:12px; padding:30px 24px 0; max-width:1180px; margin:0 auto}
+  .pg{text-decoration:none; font-family:var(--mono); font-size:13px; color:var(--clay-deep); border:1px solid var(--line-strong); border-radius:11px; padding:12px 17px; background:var(--panel); transition:.15s; max-width:48%}
+  .pg:hover{border-color:var(--clay)}
+  .pg small{display:block; font-size:10.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--slate-2); margin-bottom:2px}
+  .pg.next{text-align:right; margin-left:auto}
+
+  /* completion */
+  .finish{border-top:1px solid var(--line); padding:54px 0 30px; text-align:center}
+  .finish .seal{width:58px; height:58px; border-radius:50%; background:var(--signal); color:#fff; display:grid; place-items:center; margin:0 auto 18px; font-size:26px; box-shadow:0 0 0 8px var(--signal-soft)}
+  .finish h2{font-family:var(--display); font-weight:800; font-size:34px; margin:0 0 8px; letter-spacing:-.01em}
+  .finish p{color:var(--slate); max-width:58ch; margin:0 auto 14px}
+  .finish .rule3{font-family:var(--mono); font-size:13px; background:var(--paper-2); display:inline-block; padding:14px 18px; border-radius:12px; margin:10px auto 22px; text-align:left; color:var(--ink); line-height:1.9}
+  .finish .rule3 b{color:var(--clay-deep)}
+  .finish .home{text-decoration:none; font-family:var(--mono); font-size:14px; background:var(--ink); color:var(--paper); padding:13px 22px; border-radius:11px; display:inline-block; transition:.15s}
+  .finish .home:hover{background:#2a2620}
+
+  footer{border-top:1px solid var(--line); padding:26px 0 60px; font-family:var(--mono); font-size:12px; color:var(--slate-2); display:flex; flex-wrap:wrap; gap:8px 18px}
+
+  .float-prog{position:fixed; right:18px; bottom:18px; z-index:60; background:var(--ink); color:var(--paper); border-radius:14px; padding:13px 16px; font-family:var(--mono); font-size:12px; box-shadow:0 16px 40px -16px rgba(0,0,0,.5); display:flex; align-items:center; gap:11px}
+  .float-prog .ring{position:relative; width:34px; height:34px}
+  .float-prog svg{transform:rotate(-90deg)}
+  .float-prog .pct{position:absolute; inset:0; display:grid; place-items:center; font-weight:700; font-size:11px}
+  @media(max-width:520px){.float-prog{left:18px; right:18px; justify-content:center}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="wrap topbar-in">
+    <button class="navtoggle" aria-label="Toggle module menu" aria-controls="sidenav"><span></span></button>
+    <a class="brand" href="index.html"><span class="dot"></span> OPERATOR&rsquo;S&nbsp;PATH</a>
+    <div class="meta" id="metaProg">MODULE 08 / 08 · 0% complete</div>
+  </div>
+  <div class="pbar"><i id="bar"></i></div>
+</div>
+<aside class="sidenav" id="sidenav" aria-label="All modules">
+  <a class="sidehead" href="index.html"><span class="dot"></span> OPERATOR&rsquo;S&nbsp;PATH</a>
+  <nav class="sidenav-list">
+    <a class="mp home" href="index.html"><span class="mpn">&#9733;</span><span class="mpl">Path</span></a>
+    <a class="mp" href="01-ground-control.html"><span class="mpn">01</span><span class="mpl">Ground Control</span></a>
+    <a class="mp" href="02-trust-and-permissions.html"><span class="mpn">02</span><span class="mpl">Permissions</span></a>
+    <a class="mp" href="03-context-engineering.html"><span class="mpn">03</span><span class="mpl">Context</span></a>
+    <a class="mp" href="04-skills.html"><span class="mpn">04</span><span class="mpl">Skills</span></a>
+    <a class="mp" href="05-mcp.html"><span class="mpn">05</span><span class="mpl">MCP</span></a>
+    <a class="mp" href="06-hooks.html"><span class="mpn">06</span><span class="mpl">Hooks</span></a>
+    <a class="mp" href="07-parallel.html"><span class="mpn">07</span><span class="mpl">Parallel</span></a>
+    <a class="mp current" href="08-agentic-engineering.html"><span class="mpn">08</span><span class="mpl">Agentic Eng.</span></a>
+  </nav>
+</aside>
+<div class="navscrim" aria-hidden="true"></div>
+
+<header class="hero">
+  <div class="wrap">
+    <span class="eyebrow">Module 08 · the finale &mdash; tying it together</span>
+    <h1>From operating the tool<br><span class="thin">to engineering the system.</span></h1>
+    <p class="lede">The previous seven modules were primitives. This one is the stance that turns them into a practice: a lens for the whole skill set, the scaling problems you&rsquo;ll hit, the compounding habit that beats raw horsepower, and how to package it all so a team levels up in one install.</p>
+
+    <div class="pillars" id="pillars">
+      <div class="plabel"><span>The Five Pillars &mdash; click one to see what it means &amp; where you learned it</span><span class="note">instructor framing, official features</span></div>
+      <div class="prow" id="prow"></div>
+      <div class="pdetail" id="pdetail"></div>
+    </div>
+  </div>
+</header>
+
+<section class="block" id="m8">
+  <div class="wrap">
+    <div class="sec-head"><span class="sec-num">MODULE 08</span><h2>Agentic Engineering</h2></div>
+    <div class="module-intro">
+      <span class="chip live">● finale</span>
+      <span class="chip frame">framing ≠ official</span>
+      <span class="chip">~25 min read</span>
+      <span class="chip">6 lessons · 1 check</span>
+    </div>
+    <p class="sec-sub">The Five Pillars as a lens over everything you&rsquo;ve learned, the named scaling challenges, compound engineering (the one genuinely new idea), auditing a codebase for AI-readiness, and plugins as the team-scale multiplier.</p>
+
+    <!-- 8.1 -->
+    <div class="lesson" data-lesson>
+      <button class="done-toggle" aria-pressed="false"><span class="box"></span> mark done</button>
+      <h3>8.1 · The Five Pillars (a lens, not a spec)</h3>
+      <p class="lead">A way to organize the seven primitives into a practice. Use the map above as you read.</p>
+      <p>The pillars give names to the shifts you&rsquo;ve already made: from stuffing context to <em>engineering</em> it, from trusting output to <em>validating</em> it, from prompting to building <em>tooling</em>, from a human-shaped codebase to an <em>agent-legible</em> one, and from one-off work to <em>compounding</em> work. Nothing here is a new feature &mdash; it&rsquo;s a frame for using the features well.</p>
+      <div class="callout frame"><span class="ch">Provenance · be precise</span><p>&ldquo;The Five Pillars of Agentic Engineering&rdquo; is the framing of the <strong>ByteByteAI course (instructor John Kim)</strong>, not official Anthropic terminology. The underlying capabilities are all real and documented; the pillar names are a teaching scaffold. Worth knowing so you don&rsquo;t go looking for &ldquo;the five pillars&rdquo; in Anthropic&rsquo;s docs &mdash; they&rsquo;re not there by that name.</p></div>
+    </div>
+
+    <!-- 8.2 -->
+    <div class="lesson" data-lesson>
+      <button class="done-toggle" aria-pressed="false"><span class="box"></span> mark done</button>
+      <h3>8.2 · The scaling challenges</h3>
+      <p class="lead">As you do more with Claude Code, the same handful of problems recur. Naming them is half the fix.</p>
+      <ul>
+        <li><strong>Context bloat</strong> &mdash; the window fills with noise; recall rots. <em>(Module 03.)</em></li>
+        <li><strong>Skill explosion</strong> &mdash; dozens of overlapping skills that mis-trigger or duplicate. <em>(Module 04 &mdash; keep them small, single-purpose, well-described.)</em></li>
+        <li><strong>Evaluation gaps</strong> &mdash; no reliable way to know the output is correct, so you read everything. <em>(Module 06.)</em></li>
+        <li><strong>Friction points</strong> &mdash; the same manual setup or correction every session. <em>(Hooks + a clean codebase.)</em></li>
+        <li><strong>You-as-the-bottleneck</strong> &mdash; the agent is fast; your review is not. <em>(Module 07&rsquo;s warning, made central.)</em></li>
+      </ul>
+      <p>Notice the pattern: more agents or more context never solves these &mdash; they make several <em>worse</em>. The solutions are validation, hygiene, and compounding.</p>
+    </div>
+
+    <!-- 8.3 -->
+    <div class="lesson" data-lesson>
+      <button class="done-toggle" aria-pressed="false"><span class="box"></span> mark done</button>
+      <h3>8.3 · Compound engineering &mdash; the one new idea</h3>
+      <p class="lead">The defining move: each task leaves the system better, so the next task is cheaper.</p>
+      <p>The term comes from Kieran Klaassen and was popularized by Dan Shipper: <em>&ldquo;you expect each feature to make the next feature easier to build.&rdquo;</em> The mechanism is a loop &mdash; after you finish work, you don&rsquo;t just ship; you <strong>codify what you learned</strong> back into the setup.</p>
+      <div class="flywheel">
+        <svg width="300" height="180" viewBox="0 0 300 180" role="img" aria-label="Compound engineering loop: plan, delegate, assess, codify">
+          <defs><marker id="fw" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#C96442"/></marker></defs>
+          <circle cx="150" cy="90" r="62" fill="none" stroke="#D8D0C0" stroke-width="2"/>
+          <path d="M150 28 A62 62 0 0 1 212 90" fill="none" stroke="#C96442" stroke-width="2.5" marker-end="url(#fw)"/>
+          <path d="M212 90 A62 62 0 0 1 150 152" fill="none" stroke="#C96442" stroke-width="2.5" marker-end="url(#fw)"/>
+          <path d="M150 152 A62 62 0 0 1 88 90" fill="none" stroke="#C96442" stroke-width="2.5" marker-end="url(#fw)"/>
+          <path d="M88 90 A62 62 0 0 1 150 28" fill="none" stroke="#C96442" stroke-width="2.5" marker-end="url(#fw)"/>
+          <text class="flw-step" x="150" y="22">PLAN</text>
+          <text class="flw-step" x="246" y="92">DELEGATE</text>
+          <text class="flw-step" x="150" y="170">ASSESS</text>
+          <text class="flw-step" x="54" y="92">CODIFY</text>
+          <text class="flw-sub" x="150" y="86">each loop</text>
+          <text class="flw-sub" x="150" y="100">starts cheaper</text>
+        </svg>
+      </div>
+      <p>That last step is everything. Fixed a recurring mistake? Add a <strong>hook</strong>. Repeated a procedure? Write a <strong>skill</strong>. Learned a convention? Put it in <strong>CLAUDE.md</strong>. Now the next task starts from a smarter baseline. One-off prompting starts from zero every time; compound engineering starts from where you left off.</p>
+      <div class="callout note"><span class="ch">This is why the rule-of-three matters</span><p>CLAUDE.md, skills, and hooks aren&rsquo;t just three places to put things &mdash; they&rsquo;re the three <em>surfaces you compound onto</em>. Every module in this course was quietly teaching you where to deposit learning so it pays forward.</p></div>
+    </div>
+
+    <!-- 8.4 -->
+    <div class="lesson" data-lesson>
+      <button class="done-toggle" aria-pressed="false"><span class="box"></span> mark done</button>
+      <h3>8.4 · Auditing a codebase for AI-readiness</h3>
+      <p class="lead">An agent is only as good as the codebase is legible. A messy repo taxes every single task.</p>
+      <p>Anthropic&rsquo;s parallel to compound engineering is making the codebase itself agent-ready &mdash; because Claude reads the code to act, and ambiguity in the code becomes ambiguity in the work:</p>
+      <ul>
+        <li><strong>Delete dead code.</strong> Every unused path is a false lead Claude can follow.</li>
+        <li><strong>Kill competing patterns.</strong> Three ways to do the same thing means Claude picks one at random. Converge on one.</li>
+        <li><strong>Document the non-obvious in-repo.</strong> The &ldquo;golden rules&rdquo; that aren&rsquo;t inferable from the code go in CLAUDE.md or path-scoped rules.</li>
+        <li><strong>Invest in tests.</strong> They&rsquo;re what makes validation (and the Stop hook) possible.</li>
+      </ul>
+      <p>This is itself compounding: time spent making the repo legible is repaid on every future agent task. &ldquo;Designing harnesses to eliminate friction&rdquo; &mdash; the course&rsquo;s phrase &mdash; is the same instinct applied to your whole setup.</p>
+    </div>
+
+    <!-- 8.5 -->
+    <div class="lesson" data-lesson>
+      <button class="done-toggle" aria-pressed="false"><span class="box"></span> mark done</button>
+      <h3>8.5 · Plugins &mdash; compounding at team scale</h3>
+      <p class="lead">Everything you&rsquo;ve built &mdash; skills, hooks, subagents, MCP servers &mdash; bundled into one installable unit.</p>
+      <p>A <strong>plugin</strong> packages your primitives together and distributes them through a <strong>marketplace</strong> (a GitHub repo). Instead of each teammate hand-assembling the same setup, they install it once:</p>
+      <div class="term">
+        <div class="term-bar"><i></i><i></i><i></i><span class="ttl">share a whole setup</span><button class="copy" data-copy="claude plugin marketplace add your-org/claude-setup
+claude plugin install team-toolkit">copy</button></div>
+        <pre><span class="pr">$</span> claude plugin marketplace add your-org/claude-setup
+<span class="pr">$</span> claude plugin install team-toolkit
+<span class="ok">✓ skills, hooks, subagents &amp; MCP servers installed</span></pre>
+      </div>
+      <ul>
+        <li>Plugin skills are <strong>namespaced</strong> (<code class="inl">/plugin:skill</code>) so they never collide with yours.</li>
+        <li>Plugin hooks <strong>merge</strong> with your own (Module 06) &mdash; team guardrails layer on top of personal ones.</li>
+      </ul>
+      <div class="callout note"><span class="ch">Why this is the finale</span><p>Compound engineering for one person makes <em>your</em> next task cheaper. A plugin makes <em>everyone&rsquo;s</em> next task cheaper, once. It&rsquo;s the same flywheel, turning for the whole team.</p></div>
+    </div>
+
+    <!-- 8.6 -->
+    <div class="lesson" data-lesson>
+      <button class="done-toggle" aria-pressed="false"><span class="box"></span> mark done</button>
+      <h3>8.6 · The operator&rsquo;s stance</h3>
+      <p class="lead">What all eight modules add up to.</p>
+      <p>You don&rsquo;t use Claude Code well by prompting harder. You use it well by building a system: a clean window, deliberate trust, reusable tooling, deterministic guardrails, a legible codebase, the right parallelism only when earned, and the habit of codifying every lesson so the system improves. The goal was never &ldquo;Claude does my job.&rdquo; It&rsquo;s that each task is faster and safer than the last &mdash; and your attention goes to judgment, not keystrokes.</p>
+      <details class="deep">
+        <summary><span class="pl">+</span> The capstone, if you want one</summary>
+        <div class="inside">
+          <p>The course&rsquo;s own capstone is the best test: pick a real project you&rsquo;d ship anyway, then set it up properly &mdash; write a lean CLAUDE.md, scope <code class="inl">.claude/rules/</code>, build a couple of reusable skills, wire a validation harness (tests + a PreToolUse guard + a Stop &ldquo;tests pass&rdquo; hook), connect only the MCP you&rsquo;ll actually use, and use worktrees or subagents only where the work is genuinely parallel. If, by the second feature, the setup is making you faster rather than the reverse &mdash; you&rsquo;ve got it.</p>
+        </div>
+      </details>
+    </div>
+
+    <!-- Try it -->
+    <div class="lesson" data-lesson>
+      <button class="done-toggle" aria-pressed="false"><span class="box"></span> mark done</button>
+      <h3>Try it yourself</h3>
+      <p class="lead">Tick as you go &mdash; these feed your meter.</p>
+      <ul class="tasks" id="tasks">
+        <li data-task><span class="tick"></span><span class="tk">After your next task, codify one learning into a hook, skill, or CLAUDE.md<small>start the flywheel deliberately, once</small></span></li>
+        <li data-task><span class="tick"></span><span class="tk">Audit one module of your repo: delete dead code, pick one pattern<small>note how the next agent task on it goes smoother</small></span></li>
+        <li data-task><span class="tick"></span><span class="tk">Identify which scaling challenge bites you most right now<small>bloat / explosion / eval gap / friction / you</small></span></li>
+        <li data-task><span class="tick"></span><span class="tk">Bundle your best skills + hooks into a plugin and install it fresh<small>even just for yourself, to prove the loop</small></span></li>
+        <li data-task><span class="tick"></span><span class="tk">Start the capstone: one real project, set up properly end-to-end<small>the second feature is where you feel the compounding</small></span></li>
+      </ul>
+    </div>
+
+    <!-- Quiz -->
+    <div class="quiz" data-lesson>
+      <span class="qh">Knowledge check · 08 &mdash; the last one</span>
+      <div class="q">What defines <em>compound engineering</em>, as opposed to just prompting Claude well each time?</div>
+      <button class="opt" data-correct="false"><span class="lt">A</span><span>Running more agents in parallel so more work happens at once.</span></button>
+      <button class="opt" data-correct="true"><span class="lt">B</span><span>Codifying each task&rsquo;s learnings back into hooks, skills, and CLAUDE.md, so the next task starts from a smarter baseline.</span></button>
+      <button class="opt" data-correct="false"><span class="lt">C</span><span>Using a larger context window so Claude can hold more at once.</span></button>
+      <button class="opt" data-correct="false"><span class="lt">D</span><span>Avoiding hooks and rules so the agent stays maximally flexible.</span></button>
+      <div class="verdict" id="v1"></div>
+    </div>
+
+  </div>
+</section>
+
+<section class="finish">
+  <div class="wrap">
+    <div class="seal" id="seal">✓</div>
+    <h2>That&rsquo;s the path.</h2>
+    <p>Eight modules, from the agentic loop to engineering a compounding system. If you take one thing from all of it, take the spine that ran through every module:</p>
+    <div class="rule3">
+      durable facts &nbsp;→&nbsp; <b>CLAUDE.md</b><br>
+      repeatable procedures &nbsp;→&nbsp; <b>skills</b><br>
+      rules that must hold &nbsp;→&nbsp; <b>hooks</b><br>
+      and every lesson learned &nbsp;→&nbsp; <b>codified, so the next task is cheaper</b>
+    </div>
+    <p style="margin-bottom:24px">Most messy Claude Code setups are just one of these doing another&rsquo;s job. Get the homes right and the rest follows.</p>
+    <a class="home" href="index.html">★ back to the path index</a>
+  </div>
+</section>
+
+<nav class="pager">
+  <a class="pg prev" href="07-parallel.html"><small>previous</small>← 07 · Going Parallel</a>
+  <a class="pg next" href="index.html"><small>path complete</small>★ Index &amp; recap →</a>
+</nav>
+
+<footer class="wrap">
+  <span>OPERATOR&rsquo;S PATH · CHUNK 08 · COMPLETE</span><span>·</span>
+  <span>verified against code.claude.com/docs</span><span>·</span>
+  <span>Claude Code 2.1.x · June 2026</span>
+</footer>
+
+<div class="float-prog" id="float" hidden>
+  <div class="ring">
+    <svg width="34" height="34"><circle cx="17" cy="17" r="14" fill="none" stroke="rgba(255,255,255,.18)" stroke-width="4"/><circle id="ring" cx="17" cy="17" r="14" fill="none" stroke="#C96442" stroke-width="4" stroke-linecap="round" stroke-dasharray="88" stroke-dashoffset="88"/></svg>
+    <span class="pct" id="ringpct">0</span>
+  </div>
+  <span id="floatlabel">getting started</span>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  // ---- five pillars map ----
+  var pillars = [
+    { k:"context", n:"Context Engineering", tag:"the window",
+      def:"Treat the context window as a scarce, high-signal resource — the smallest set of tokens that gets the job done, kept clean with compaction and the right memory homes.",
+      chal:"Context bloat",
+      mods:[{n:"03 · Context",h:"03-context-engineering.html"}] },
+    { k:"validation", n:"Agentic Validation", tag:"trust output",
+      def:"Make the agent prove its work instead of asserting success — deterministic checks and self-correcting loops so you can stop reading every line.",
+      chal:"Evaluation gaps",
+      mods:[{n:"06 · Hooks",h:"06-hooks.html"},{n:"05 · /chrome",h:"05-mcp.html"}] },
+    { k:"tooling", n:"Agentic Tooling", tag:"capability",
+      def:"Give Claude reusable capability that loads only when needed — skills for procedures, MCP for reach — without taxing the window.",
+      chal:"Skill explosion / friction",
+      mods:[{n:"04 · Skills",h:"04-skills.html"},{n:"05 · MCP",h:"05-mcp.html"}] },
+    { k:"codebase", n:"Agentic Codebase", tag:"legibility",
+      def:"Organize the code so an agent can navigate it — dead code gone, one pattern per job, golden rules documented, tests that make validation possible.",
+      chal:"Friction points",
+      mods:[{n:"08 · §8.4",h:"08-agentic-engineering.html#m8"},{n:"03 · CLAUDE.md",h:"03-context-engineering.html"}] },
+    { k:"compound", n:"Compound Engineering", tag:"each task cheaper",
+      def:"Codify every task's learnings back into the setup so the next task starts from a smarter baseline. The flywheel that beats raw horsepower.",
+      chal:"You-as-the-bottleneck",
+      mods:[{n:"08 · §8.3",h:"08-agentic-engineering.html#m8"}] }
+  ];
+  var prow = document.getElementById("prow");
+  var pdetail = document.getElementById("pdetail");
+  pillars.forEach(function(p,i){
+    var b = document.createElement("button");
+    b.className = "pil"; b.dataset.k = p.k;
+    b.innerHTML = '<div class="pnum">'+(i+1)+'</div><div class="pname">'+p.n+'</div><div class="ptag">'+p.tag+'</div>';
+    b.addEventListener("click", function(){ selectPillar(p.k); });
+    prow.appendChild(b);
+  });
+  function selectPillar(k){
+    var p = null;
+    pillars.forEach(function(x){ if(x.k===k) p = x; });
+    Array.prototype.forEach.call(prow.children, function(c){ c.classList.toggle("active", c.dataset.k===k); });
+    var links = p.mods.map(function(m){
+      var here = m.h.indexOf("08-agentic") === 0;
+      return '<a class="modlink'+(here?" here":"")+'" href="'+m.h+'">'+m.n+'</a>';
+    }).join("");
+    pdetail.innerHTML =
+      '<div class="pd-name">'+p.n+'</div>' +
+      '<p class="pd-def">'+p.def+'</p>' +
+      '<div class="pd-chal">answers the challenge of &mdash; <b>'+p.chal+'</b></div>' +
+      '<div class="pd-mods"><span class="ml">built in</span>'+links+'</div>';
+  }
+  selectPillar("context");
+
+  // ---- progress engine ----
+  var toggles = Array.prototype.slice.call(document.querySelectorAll(".done-toggle"));
+  var tasks = Array.prototype.slice.call(document.querySelectorAll("#tasks li"));
+  var totalUnits = toggles.length + tasks.length + 1;
+  var quizDone = false;
+  function tally(){
+    var done=0;
+    toggles.forEach(function(t){ if(t.classList.contains("done")) done++; });
+    tasks.forEach(function(t){ if(t.classList.contains("done")) done++; });
+    if(quizDone) done++;
+    var pct = Math.round(done/totalUnits*100);
+    document.getElementById("bar").style.width = pct+"%";
+    document.getElementById("metaProg").textContent = "MODULE 08 / 08 · "+pct+"% complete";
+    document.getElementById("ring").style.strokeDashoffset = 88-(88*pct/100);
+    document.getElementById("ringpct").textContent = pct;
+    var f=document.getElementById("float"); f.hidden=(pct===0);
+    var label=document.getElementById("floatlabel");
+    if(pct===0) label.textContent="getting started";
+    else if(pct<50) label.textContent="warming up";
+    else if(pct<100) label.textContent="almost there";
+    else { label.textContent="path complete ✓"; f.style.background="#2E6E5B";
+           document.getElementById("seal").style.transform="scale(1.08)"; }
+  }
+  toggles.forEach(function(t){
+    t.addEventListener("click", function(){
+      var on=t.classList.toggle("done"); t.setAttribute("aria-pressed",on);
+      t.lastChild.textContent = on ? " done" : " mark done"; tally();
+    });
+  });
+  tasks.forEach(function(li){ li.addEventListener("click", function(){ li.classList.toggle("done"); tally(); }); });
+
+  document.querySelectorAll(".copy").forEach(function(btn){
+    btn.addEventListener("click", function(){
+      var txt=btn.getAttribute("data-copy");
+      navigator.clipboard && navigator.clipboard.writeText(txt).then(function(){
+        var o=btn.textContent; btn.textContent="copied ✓"; setTimeout(function(){ btn.textContent=o; },1300);
+      });
+    });
+  });
+
+  var opts = Array.prototype.slice.call(document.querySelectorAll(".opt"));
+  var verdict = document.getElementById("v1");
+  opts.forEach(function(o){
+    o.addEventListener("click", function(){
+      if(quizDone) return;
+      var right = o.getAttribute("data-correct")==="true";
+      opts.forEach(function(x){ x.disabled=true; if(x.getAttribute("data-correct")==="true") x.classList.add("correct"); });
+      if(!right) o.classList.add("wrong");
+      verdict.className="verdict show "+(right?"right":"nope");
+      verdict.innerHTML = right
+        ? "<b>Right — and that's the whole course in one sentence.</b> Compounding is about the <em>setup</em> getting smarter, not the prompt or the parallelism. A (more agents) makes you the bottleneck faster; C (bigger window) fights context rot the wrong way; D (no rules) throws away the deterministic guarantees that make delegation safe."
+        : "<b>No — that's confusing horsepower with compounding.</b> The defining move is codifying learnings back into hooks, skills, and CLAUDE.md so each task starts smarter. More agents (A) and bigger windows (C) add capacity but don't compound; dropping rules (D) removes the guarantees that let you trust the output at all.";
+      quizDone=true; tally();
+    });
+  });
+
+  tally();
+})();
+</script>
+<script>
+(function(){
+  var t=document.querySelector('.navtoggle'),
+      s=document.querySelector('.sidenav'),
+      c=document.querySelector('.navscrim');
+  if(!t||!s) return;
+  function close(){s.classList.remove('open'); if(c)c.classList.remove('open');}
+  t.addEventListener('click',function(){
+    var o=s.classList.toggle('open'); if(c)c.classList.toggle('open',o);
+  });
+  if(c)c.addEventListener('click',close);
+  s.addEventListener('click',function(e){ if(e.target.closest('a')) close(); });
+  document.addEventListener('keydown',function(e){ if(e.key==='Escape') close(); });
+})();
+</script>
+
+</body>
+</html>

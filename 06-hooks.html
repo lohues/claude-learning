@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Operator's Path · 06 Hooks</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F2EEE6; --paper-2:#E8E1D4; --panel:#FBF9F4;
+    --ink:#1B1915; --slate:#6E665A; --slate-2:#928979;
+    --clay:#C96442; --clay-deep:#A84E30; --clay-soft:#F0D9CE;
+    --signal:#2E6E5B; --signal-soft:#D6E6DF;
+    --amber:#C98A1F; --amber-soft:#F2E3C4;
+    --deny:#A23C3C; --deny-soft:#EFD7D3;
+    --term-bg:#16140F; --term-fg:#ECE6D8; --term-dim:#8E8674;
+    --line:#D8D0C0; --line-strong:#C4BAA6;
+    --display:"Bricolage Grotesque",serif;
+    --body:"IBM Plex Sans",sans-serif;
+    --mono:"JetBrains Mono",monospace;
+    --r:14px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0; background:var(--paper); color:var(--ink); font-family:var(--body); font-size:17px; line-height:1.62; -webkit-font-smoothing:antialiased}
+  ::selection{background:var(--clay-soft)}
+  a{color:var(--clay-deep)}
+  .wrap{max-width:1180px; margin:0 auto; padding:0 24px}
+
+  .topbar{position:sticky; top:0; z-index:50; background:rgba(242,238,230,.86); backdrop-filter:blur(10px); border-bottom:1px solid var(--line)}
+  .topbar-in{display:flex; align-items:center; gap:18px; height:60px}
+  a.brand{font-family:var(--mono); font-weight:700; font-size:14px; letter-spacing:.04em; display:flex; align-items:center; gap:9px; text-decoration:none; color:inherit}
+  .brand .dot{width:11px; height:11px; border-radius:50%; background:var(--clay); box-shadow:0 0 0 3px var(--clay-soft)}
+  .topbar .meta{margin-left:auto; font-family:var(--mono); font-size:12px; color:var(--slate); letter-spacing:.03em}
+  .pbar{height:3px; background:var(--paper-2)}
+  .pbar > i{display:block; height:100%; width:0; background:linear-gradient(90deg,var(--clay),var(--clay-deep)); transition:width .5s cubic-bezier(.4,0,.2,1)}
+
+  /* ---------- sidebar nav ---------- */
+  .navtoggle{display:inline-flex; align-items:center; justify-content:center; width:38px; height:38px; border:1px solid var(--line); border-radius:10px; background:var(--paper); color:var(--ink); cursor:pointer; padding:0; flex:0 0 auto}
+  .navtoggle span{display:block; width:17px; height:2px; background:currentColor; border-radius:2px; position:relative}
+  .navtoggle span::before,.navtoggle span::after{content:""; position:absolute; left:0; width:17px; height:2px; background:currentColor; border-radius:2px}
+  .navtoggle span::before{top:-5px} .navtoggle span::after{top:5px}
+  .sidenav{position:fixed; top:0; left:0; bottom:0; width:250px; z-index:70; background:var(--panel); border-right:1px solid var(--line); display:flex; flex-direction:column; padding:18px 14px; overflow-y:auto; transform:translateX(-100%); transition:transform .25s ease}
+  .sidenav.open{transform:none}
+  .sidehead{display:flex; align-items:center; gap:9px; font-family:var(--mono); font-weight:700; font-size:13px; letter-spacing:.04em; text-decoration:none; color:inherit; padding:4px 8px 14px; border-bottom:1px solid var(--line); margin-bottom:12px}
+  .sidehead .dot{width:11px; height:11px; border-radius:50%; background:var(--clay); box-shadow:0 0 0 3px var(--clay-soft); flex:0 0 auto}
+  .sidenav-list{display:flex; flex-direction:column; gap:4px}
+  .mp{display:flex; align-items:center; gap:10px; text-decoration:none; padding:9px 12px; border-radius:10px; border:1px solid transparent; background:transparent; color:var(--slate); font-family:var(--mono); font-size:12.5px; white-space:nowrap; transition:.15s}
+  .mp:hover{background:var(--paper); color:var(--ink)}
+  .mp .mpn{font-weight:700; flex:0 0 auto; width:22px; text-align:center}
+  .mp .mpl{font-size:12px}
+  .mp.current{background:var(--clay-soft); border-color:var(--clay); color:var(--clay-deep)}
+  .mp.off{opacity:.42; pointer-events:none}
+  .mp.home .mpn{color:var(--clay)}
+  .navscrim{position:fixed; inset:0; background:rgba(20,18,14,.42); z-index:65; opacity:0; pointer-events:none; transition:opacity .25s}
+  .navscrim.open{opacity:1; pointer-events:auto}
+  @media(min-width:1100px){
+    .sidenav{transform:none}
+    body{padding-left:250px}
+    .navtoggle{display:none}
+    .navscrim{display:none}
+  }
+
+  .hero{padding:58px 0 16px}
+  .eyebrow{font-family:var(--mono); font-size:12.5px; letter-spacing:.18em; text-transform:uppercase; color:var(--clay-deep); font-weight:500}
+  .hero h1{font-family:var(--display); font-weight:800; line-height:1.03; font-size:clamp(38px,6.2vw,66px); letter-spacing:-.02em; margin:14px 0 0}
+  .hero h1 .thin{font-weight:400; color:var(--slate)}
+  .hero p.lede{font-size:20px; color:var(--slate); max-width:60ch; margin:18px 0 0}
+
+  /* ---------- gate demo (signature) ---------- */
+  .gate{background:var(--panel); border:1px solid var(--line-strong); border-radius:20px; padding:24px 26px 26px; margin:36px 0 6px; box-shadow:0 20px 50px -34px rgba(0,0,0,.4)}
+  .glabel{font-family:var(--mono); font-size:12px; letter-spacing:.1em; text-transform:uppercase; color:var(--slate); margin-bottom:14px}
+  .action{font-family:var(--mono); font-size:13.5px; background:var(--term-bg); color:var(--term-fg); border-radius:10px; padding:13px 16px; margin-bottom:16px}
+  .action b{color:#E36B6B}
+  .cols{display:grid; grid-template-columns:1fr 1fr; gap:12px}
+  @media(max-width:560px){.cols{grid-template-columns:1fr}}
+  .col{border:1px solid var(--line-strong); border-radius:14px; padding:16px; background:var(--paper); text-align:center}
+  .col.claudemd{border-color:#E0C079}
+  .col.hook{border-color:#A9CEC1}
+  .colh{font-family:var(--display); font-weight:800; font-size:17px}
+  .col.claudemd .colh{color:var(--amber)} .col.hook .colh{color:var(--signal)}
+  .col .sub{font-family:var(--mono); font-size:11px; color:var(--slate-2); margin:3px 0 14px}
+  .light{font-family:var(--mono); font-size:13px; font-weight:700; border-radius:9px; padding:14px 10px; margin-bottom:12px; transition:.15s; background:var(--paper-2); color:var(--slate)}
+  .light.blocked{background:var(--signal-soft); color:var(--signal)}
+  .light.leaked{background:var(--deny-soft); color:var(--deny)}
+  .col .stat{font-family:var(--mono); font-size:12.5px; color:var(--slate)}
+  .col .stat b{font-size:16px}
+  .col .stat .lk{color:var(--deny)}
+  .col .stat .bk{color:var(--signal)}
+  .gmsg{margin-top:16px; font-size:14.5px; padding:12px 15px; border-radius:10px; background:var(--paper-2); color:var(--ink); border-left:3px solid var(--clay); min-height:44px}
+  .gctl{display:flex; gap:8px; flex-wrap:wrap; margin-top:16px}
+  .gbtn{font:inherit; font-family:var(--mono); font-size:13px; cursor:pointer; border-radius:9px; padding:11px 16px; border:1px solid var(--ink); background:var(--ink); color:var(--paper); transition:.15s}
+  .gbtn:hover{background:#2a2620}
+  .gbtn.ghost{background:var(--paper); color:var(--slate); border-color:var(--line-strong)}
+  .gbtn.ghost:hover{border-color:var(--clay); color:var(--ink); background:var(--paper)}
+
+  section.block{padding:52px 0; border-top:1px solid var(--line)}
+  .sec-head{display:flex; align-items:baseline; gap:16px; margin-bottom:6px}
+  .sec-num{font-family:var(--mono); font-size:13px; color:var(--clay-deep); font-weight:700; letter-spacing:.05em}
+  .sec-head h2{font-family:var(--display); font-weight:800; font-size:clamp(26px,4vw,38px); letter-spacing:-.01em; margin:0}
+  .sec-sub{color:var(--slate); max-width:62ch; margin:10px 0 28px; font-size:17px}
+  .module-intro{display:flex; flex-wrap:wrap; gap:10px; margin-bottom:8px}
+  .chip{font-family:var(--mono); font-size:12px; padding:5px 11px; border-radius:99px; border:1px solid var(--line-strong); color:var(--slate); background:var(--panel)}
+  .chip.live{color:var(--signal); border-color:var(--signal); background:var(--signal-soft)}
+
+  .lesson{background:var(--panel); border:1px solid var(--line); border-radius:var(--r); padding:26px 28px; margin:18px 0; position:relative}
+  .lesson h3{font-family:var(--display); font-weight:800; font-size:23px; letter-spacing:-.01em; margin:0 0 4px; padding-right:120px}
+  .lesson .lead{color:var(--slate); margin:0 0 16px; font-size:16px}
+  .lesson p{margin:14px 0}
+  .lesson ul{margin:14px 0; padding-left:0; list-style:none}
+  .lesson ul li{position:relative; padding-left:26px; margin:9px 0}
+  .lesson ul li::before{content:"›"; position:absolute; left:6px; top:-1px; color:var(--clay); font-weight:700; font-family:var(--mono)}
+  .lesson strong{font-weight:600}
+  code.inl{font-family:var(--mono); font-size:.86em; background:var(--paper-2); padding:2px 6px; border-radius:5px; color:var(--clay-deep)}
+
+  /* lifecycle timeline */
+  .timeline{display:flex; flex-wrap:wrap; gap:7px; margin:18px 0; align-items:stretch}
+  .ev{border:1px solid var(--line); border-radius:10px; padding:10px 12px; background:var(--paper); flex:1 1 150px; min-width:130px}
+  .ev .en{font-family:var(--mono); font-size:12px; font-weight:700; color:var(--clay-deep)}
+  .ev .ed{font-size:12.5px; color:var(--slate); margin-top:3px; line-height:1.4}
+  .ev.gate-ev{border-color:var(--signal); background:var(--signal-soft)}
+  .ev.gate-ev .en{color:var(--signal)}
+
+  .done-toggle{position:absolute; top:24px; right:26px; font:inherit; font-family:var(--mono); font-size:12px; letter-spacing:.03em; padding:7px 13px; border-radius:99px; border:1px solid var(--line-strong); background:var(--paper); color:var(--slate); cursor:pointer; transition:.2s; display:flex; gap:7px; align-items:center}
+  .done-toggle:hover{border-color:var(--clay)}
+  .done-toggle .box{width:13px; height:13px; border-radius:4px; border:1.5px solid var(--slate-2); display:grid; place-items:center}
+  .done-toggle.done{background:var(--signal-soft); border-color:var(--signal); color:var(--signal)}
+  .done-toggle.done .box{background:var(--signal); border-color:var(--signal)}
+  .done-toggle.done .box::after{content:"✓"; color:#fff; font-size:10px; line-height:1}
+  @media(max-width:620px){.done-toggle{position:static; margin-bottom:14px} .lesson h3{padding-right:0}}
+
+  .term{background:var(--term-bg); border-radius:12px; overflow:hidden; margin:18px 0; box-shadow:0 14px 40px -22px rgba(0,0,0,.55)}
+  .term-bar{display:flex; align-items:center; gap:7px; padding:11px 15px; background:#211E17; border-bottom:1px solid #2c2820}
+  .term-bar i{width:11px; height:11px; border-radius:50%; background:#3a352b; display:block}
+  .term-bar i:nth-child(1){background:#C96442}
+  .term-bar .ttl{margin-left:8px; font-family:var(--mono); font-size:11.5px; color:var(--term-dim); letter-spacing:.03em}
+  .term-bar .copy{margin-left:auto; font-family:var(--mono); font-size:11px; color:var(--term-dim); background:none; border:1px solid #322d24; border-radius:6px; padding:4px 9px; cursor:pointer; transition:.15s}
+  .term-bar .copy:hover{color:var(--term-fg); border-color:#4a4438}
+  .term pre{margin:0; padding:18px; overflow-x:auto; font-family:var(--mono); font-size:13px; line-height:1.7; color:var(--term-fg)}
+  .term .pr{color:var(--clay)} .term .cm{color:var(--term-dim)} .term .ok{color:#7FB59E} .term .em{color:#E3B23C} .term .key{color:#9FB6D8} .term .str{color:#C9A876} .term .no{color:#E36B6B}
+
+  .callout{border-radius:12px; padding:16px 18px; margin:18px 0; border:1px solid; font-size:15.5px}
+  .callout .ch{font-family:var(--mono); font-size:11.5px; letter-spacing:.1em; text-transform:uppercase; font-weight:700; display:block; margin-bottom:5px}
+  .callout p{margin:6px 0 0}
+  .callout.gotcha{background:var(--amber-soft); border-color:#E0C079} .callout.gotcha .ch{color:var(--amber)}
+  .callout.note{background:var(--signal-soft); border-color:#A9CEC1} .callout.note .ch{color:var(--signal)}
+  .callout.danger{background:var(--deny-soft); border-color:#D8A39C} .callout.danger .ch{color:var(--deny)}
+
+  details.deep{border:1px solid var(--line); border-radius:12px; margin:16px 0; background:var(--panel); overflow:hidden}
+  details.deep summary{cursor:pointer; padding:15px 18px; font-family:var(--mono); font-size:13px; font-weight:500; letter-spacing:.02em; color:var(--clay-deep); list-style:none; display:flex; align-items:center; gap:9px}
+  details.deep summary::-webkit-details-marker{display:none}
+  details.deep summary .pl{transition:.2s; font-weight:700}
+  details.deep[open] summary .pl{transform:rotate(45deg)}
+  details.deep .inside{padding:0 18px 18px; border-top:1px solid var(--line)}
+  details.deep .inside p:first-child{margin-top:14px}
+  details.deep .evgrid{columns:2; column-gap:18px; font-family:var(--mono); font-size:12px; color:var(--slate); margin-top:14px}
+  @media(max-width:560px){details.deep .evgrid{columns:1}}
+  details.deep .evgrid span{display:block; padding:2px 0}
+
+  .tasks{list-style:none; padding:0; margin:16px 0}
+  .tasks li{display:flex; gap:13px; align-items:flex-start; padding:13px 15px; border:1px solid var(--line); border-radius:10px; margin:8px 0; background:var(--panel); cursor:pointer; transition:.15s}
+  .tasks li:hover{border-color:var(--line-strong)}
+  .tasks li .tick{width:22px; height:22px; border-radius:7px; border:2px solid var(--slate-2); flex:0 0 auto; margin-top:1px; display:grid; place-items:center; transition:.2s}
+  .tasks li.done{background:var(--signal-soft); border-color:#A9CEC1}
+  .tasks li.done .tick{background:var(--signal); border-color:var(--signal)}
+  .tasks li.done .tick::after{content:"✓"; color:#fff; font-size:13px}
+  .tasks li.done .tk{text-decoration:line-through; color:var(--slate)}
+  .tasks li .tk{font-size:15.5px}
+  .tasks li .tk small{display:block; font-family:var(--mono); font-size:12px; color:var(--slate); margin-top:2px; text-decoration:none}
+
+  .quiz{background:linear-gradient(180deg,var(--panel),var(--paper)); border:1px solid var(--line-strong); border-radius:var(--r); padding:26px 28px; margin:24px 0}
+  .quiz .qh{font-family:var(--mono); font-size:12px; letter-spacing:.12em; text-transform:uppercase; color:var(--clay-deep); font-weight:700}
+  .quiz .q{font-family:var(--display); font-weight:600; font-size:20px; margin:8px 0 16px}
+  .opt{display:block; width:100%; text-align:left; font:inherit; font-size:15.5px; background:var(--paper); border:1px solid var(--line-strong); border-radius:10px; padding:13px 16px; margin:9px 0; cursor:pointer; transition:.15s; display:flex; gap:11px; align-items:center}
+  .opt:hover{border-color:var(--clay)}
+  .opt .lt{font-family:var(--mono); font-weight:700; color:var(--slate); width:18px; flex:0 0 auto}
+  .opt.correct{background:var(--signal-soft); border-color:var(--signal); color:var(--signal)} .opt.correct .lt{color:var(--signal)}
+  .opt.wrong{background:var(--deny-soft); border-color:var(--deny); color:var(--deny)} .opt.wrong .lt{color:var(--deny)}
+  .opt:disabled{cursor:default}
+  .verdict{margin-top:14px; font-size:15px; padding:13px 16px; border-radius:10px; display:none}
+  .verdict.show{display:block}
+  .verdict.right{background:var(--signal-soft); color:var(--signal)}
+  .verdict.nope{background:var(--amber-soft); color:var(--amber)}
+
+  .pager{display:flex; justify-content:space-between; gap:12px; padding:30px 24px 0; max-width:1180px; margin:0 auto}
+  .pg{text-decoration:none; font-family:var(--mono); font-size:13px; color:var(--clay-deep); border:1px solid var(--line-strong); border-radius:11px; padding:12px 17px; background:var(--panel); transition:.15s; max-width:48%}
+  .pg:hover{border-color:var(--clay)}
+  .pg small{display:block; font-size:10.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--slate-2); margin-bottom:2px}
+  .pg.next{text-align:right; margin-left:auto}
+  .pg.ghost{opacity:.45; pointer-events:none}
+
+  .next{border-top:1px solid var(--line); padding:48px 0 30px; text-align:center}
+  .next h2{font-family:var(--display); font-weight:800; font-size:30px; margin:0 0 8px}
+  .next p{color:var(--slate); max-width:54ch; margin:0 auto 22px}
+  .next .cmd{font-family:var(--mono); font-size:14px; background:var(--term-bg); color:var(--term-fg); display:inline-block; padding:13px 20px; border-radius:10px}
+  .next .cmd b{color:var(--clay)}
+
+  footer{border-top:1px solid var(--line); padding:26px 0 60px; font-family:var(--mono); font-size:12px; color:var(--slate-2); display:flex; flex-wrap:wrap; gap:8px 18px}
+
+  .float-prog{position:fixed; right:18px; bottom:18px; z-index:60; background:var(--ink); color:var(--paper); border-radius:14px; padding:13px 16px; font-family:var(--mono); font-size:12px; box-shadow:0 16px 40px -16px rgba(0,0,0,.5); display:flex; align-items:center; gap:11px}
+  .float-prog .ring{position:relative; width:34px; height:34px}
+  .float-prog svg{transform:rotate(-90deg)}
+  .float-prog .pct{position:absolute; inset:0; display:grid; place-items:center; font-weight:700; font-size:11px}
+  @media(max-width:520px){.float-prog{left:18px; right:18px; justify-content:center}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="wrap topbar-in">
+    <button class="navtoggle" aria-label="Toggle module menu" aria-controls="sidenav"><span></span></button>
+    <a class="brand" href="index.html"><span class="dot"></span> OPERATOR&rsquo;S&nbsp;PATH</a>
+    <div class="meta" id="metaProg">MODULE 06 / 08 · 0% complete</div>
+  </div>
+  <div class="pbar"><i id="bar"></i></div>
+</div>
+<aside class="sidenav" id="sidenav" aria-label="All modules">
+  <a class="sidehead" href="index.html"><span class="dot"></span> OPERATOR&rsquo;S&nbsp;PATH</a>
+  <nav class="sidenav-list">
+    <a class="mp home" href="index.html"><span class="mpn">&#9733;</span><span class="mpl">Path</span></a>
+    <a class="mp" href="01-ground-control.html"><span class="mpn">01</span><span class="mpl">Ground Control</span></a>
+    <a class="mp" href="02-trust-and-permissions.html"><span class="mpn">02</span><span class="mpl">Permissions</span></a>
+    <a class="mp" href="03-context-engineering.html"><span class="mpn">03</span><span class="mpl">Context</span></a>
+    <a class="mp" href="04-skills.html"><span class="mpn">04</span><span class="mpl">Skills</span></a>
+    <a class="mp" href="05-mcp.html"><span class="mpn">05</span><span class="mpl">MCP</span></a>
+    <a class="mp current" href="06-hooks.html"><span class="mpn">06</span><span class="mpl">Hooks</span></a>
+    <a class="mp" href="07-parallel.html"><span class="mpn">07</span><span class="mpl">Parallel</span></a>
+    <a class="mp" href="08-agentic-engineering.html"><span class="mpn">08</span><span class="mpl">Agentic Eng.</span></a>
+  </nav>
+</aside>
+<div class="navscrim" aria-hidden="true"></div>
+
+<header class="hero">
+  <div class="wrap">
+    <span class="eyebrow">Module 06 · the part that guarantees</span>
+    <h1>Memory persuades.<br><span class="thin">Hooks guarantee.</span></h1>
+    <p class="lede">Everything so far &mdash; CLAUDE.md, auto memory, tool and skill descriptions &mdash; is context Claude <em>usually</em> follows. Hooks are different in kind: deterministic code that fires on lifecycle events and can hard-block an action. For any rule that must hold every single time, this is the only tool that actually delivers.</p>
+
+    <div class="gate" id="gate">
+      <div class="glabel">Persuade vs guarantee &mdash; hammer the same dangerous action under each</div>
+      <div class="action">Claude attempts: <b>git push --force origin main</b></div>
+      <div class="cols">
+        <div class="col claudemd">
+          <div class="colh">CLAUDE.md rule</div>
+          <div class="sub">&ldquo;never force-push to main&rdquo;</div>
+          <div class="light" id="lc">&mdash; idle</div>
+          <div class="stat">blocked <b class="bk" id="cb">0</b> · leaked <b class="lk" id="cl">0</b></div>
+        </div>
+        <div class="col hook">
+          <div class="colh">PreToolUse hook</div>
+          <div class="sub">matcher: Bash · exit 2 on match</div>
+          <div class="light" id="lh">&mdash; idle</div>
+          <div class="stat">blocked <b class="bk" id="hb">0</b> · leaked <b class="lk" id="hl">0</b></div>
+        </div>
+      </div>
+      <div class="gmsg" id="gmsg">Both sides forbid the same force-push. One asks nicely; one enforces in code. Run a few attempts &mdash; then run 25 &mdash; and watch the &ldquo;leaked&rdquo; counts diverge.</div>
+      <div class="gctl">
+        <button class="gbtn" id="gattempt">▶ attempt once</button>
+        <button class="gbtn" id="grun">▶ run 25 attempts</button>
+        <button class="gbtn ghost" id="greset">reset</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<section class="block" id="m6">
+  <div class="wrap">
+    <div class="sec-head"><span class="sec-num">MODULE 06</span><h2>Hooks</h2></div>
+    <div class="module-intro">
+      <span class="chip live">● core</span>
+      <span class="chip">~26 min read</span>
+      <span class="chip">deterministic enforcement</span>
+      <span class="chip">6 lessons · 1 check</span>
+    </div>
+    <p class="sec-sub">The persuade-vs-guarantee distinction, where hooks fire across the lifecycle, the anatomy (matcher + exit codes), how scope follows file location, the three hooks worth writing first, and when <em>not</em> to reach for one.</p>
+
+    <!-- 6.1 -->
+    <div class="lesson" data-lesson>
+      <button class="done-toggle" aria-pressed="false"><span class="box"></span> mark done</button>
+      <h3>6.1 · Persuade vs guarantee</h3>
+      <p class="lead">The single most important distinction in the whole course, and the reason this module exists.</p>
+      <p>A CLAUDE.md line, an auto-memory note, a skill description &mdash; all of these are <em>context</em>. Claude reads them and follows them most of the time. But &ldquo;most of the time&rdquo; is a probability, not a guarantee, and for a safety rule a single miss is a breach. A <strong>hook</strong> is deterministic code: it runs on an event, and if it exits with the blocking code, the action does not happen. Full stop. The gate above is the whole point &mdash; the CLAUDE.md side leaks a few times out of 25; the hook side never does.</p>
+      <div class="callout note"><span class="ch">The mental model</span><p>CLAUDE.md is a sign that says &ldquo;please don&rsquo;t.&rdquo; A hook is a locked door. You want signs for guidance and doors for the handful of things that must <em>never</em> happen.</p></div>
+    </div>
+
+    <!-- 6.2 -->
+    <div class="lesson" data-lesson>
+      <button class="done-toggle" aria-pressed="false"><span class="box"></span> mark done</button>
+      <h3>6.2 · Where hooks fire</h3>
+      <p class="lead">Hooks attach to lifecycle events. There are around 27 of them &mdash; but you&rsquo;ll use maybe six.</p>
+      <p>The headline events, in roughly the order they occur:</p>
+      <div class="timeline">
+        <div class="ev"><div class="en">SessionStart</div><div class="ed">session opens; can inject context</div></div>
+        <div class="ev"><div class="en">UserPromptSubmit</div><div class="ed">you send a prompt; can add or block</div></div>
+        <div class="ev gate-ev"><div class="en">PreToolUse</div><div class="ed">before any tool runs — the gate</div></div>
+        <div class="ev"><div class="en">PostToolUse</div><div class="ed">after a tool runs; can rewrite output</div></div>
+        <div class="ev"><div class="en">Notification</div><div class="ed">permission/idle prompts — desktop pings</div></div>
+        <div class="ev"><div class="en">Stop</div><div class="ed">Claude tries to finish; can force more</div></div>
+        <div class="ev"><div class="en">SessionEnd</div><div class="ed">session closes; cleanup</div></div>
+      </div>
+      <p>The star is <strong>PreToolUse</strong> &mdash; it fires <em>before</em> a tool executes, so it&rsquo;s the only place you can stop an action before it happens. (Recall Module 02&rsquo;s evaluation order: PreToolUse hooks run first, before even deny rules.)</p>
+      <details class="deep">
+        <summary><span class="pl">+</span> The full event list (you don&rsquo;t need to memorize this)</summary>
+        <div class="inside">
+          <p>As of Claude Code 2.1.x there are ~27 distinct hook events &mdash; the larger counts you&rsquo;ll see elsewhere include subtype matchers. Many recent ones exist for agent teams and worktrees (Module 07):</p>
+          <div class="evgrid">
+            <span>SessionStart · Setup</span><span>UserPromptSubmit · UserPromptExpansion</span><span>MessageDisplay</span><span>PreToolUse · PostToolUse</span><span>PostToolUseFailure · PostToolBatch</span><span>PermissionRequest · PermissionDenied</span><span>Notification</span><span>SubagentStart · SubagentStop</span><span>TaskCreated · TaskCompleted</span><span>Stop · StopFailure</span><span>TeammateIdle · InstructionsLoaded</span><span>ConfigChange · CwdChanged · FileChanged</span><span>WorktreeCreate · WorktreeRemove</span><span>PreCompact · PostCompact</span><span>Elicitation · ElicitationResult</span><span>SessionEnd</span>
+          </div>
+          <p style="margin-top:14px">The number drifts upward release to release. Don&rsquo;t learn the list; learn PreToolUse, PostToolUse, and Stop, and look up the rest when you need them.</p>
+        </div>
+      </details>
+    </div>
+
+    <!-- 6.3 -->
+    <div class="lesson" data-lesson>
+      <button class="done-toggle" aria-pressed="false"><span class="box"></span> mark done</button>
+      <h3>6.3 · Anatomy: matcher + exit codes</h3>
+      <p class="lead">A hook is configured in settings.json, filtered by a matcher, and communicates back through its exit code.</p>
+      <div class="term">
+        <div class="term-bar"><i></i><i></i><i></i><span class="ttl">.claude/settings.json</span><button class="copy" data-copy='{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          { "type": "command", "command": ".claude/hooks/block-force-push.sh" }
+        ]
+      }
+    ]
+  }
+}'>copy</button></div>
+        <pre>{
+  <span class="key">"hooks"</span>: {
+    <span class="key">"PreToolUse"</span>: [
+      {
+        <span class="key">"matcher"</span>: <span class="str">"Bash"</span>,        <span class="cm"># filter: only Bash tool calls</span>
+        <span class="key">"hooks"</span>: [
+          { <span class="key">"type"</span>: <span class="str">"command"</span>, <span class="key">"command"</span>: <span class="str">".claude/hooks/block-force-push.sh"</span> }
+        ]
+      }
+    ]
+  }
+}</pre>
+      </div>
+      <div class="term">
+        <div class="term-bar"><i></i><i></i><i></i><span class="ttl">block-force-push.sh</span></div>
+        <pre><span class="cm">#!/usr/bin/env bash</span>
+input=$(cat)                      <span class="cm"># hook receives JSON on stdin</span>
+<span class="key">if</span> echo "$input" | grep -q -- <span class="str">'--force'</span>; <span class="key">then</span>
+  echo <span class="str">"Force-push blocked by policy."</span> &gt;&amp;2   <span class="cm"># stderr → fed back to Claude</span>
+  <span class="no">exit 2</span>                          <span class="cm"># 2 = BLOCK. only 2 blocks.</span>
+<span class="key">fi</span>
+<span class="ok">exit 0</span>                            <span class="cm"># 0 = allow</span></pre>
+      </div>
+      <ul>
+        <li><strong>Types:</strong> <code class="inl">command</code> (most common), plus <code class="inl">http</code>, <code class="inl">mcp_tool</code>, <code class="inl">prompt</code>, <code class="inl">agent</code>.</li>
+        <li><strong>matcher</strong> filters by tool name (<code class="inl">Bash</code>, <code class="inl">Edit</code>, <code class="inl">Write</code>) or session/notification subtype; an optional <code class="inl">if</code> field narrows further with permission-rule syntax.</li>
+        <li><strong>Exit codes:</strong> <code class="inl">0</code> = success (stdout can become context on SessionStart / UserPromptSubmit); <code class="inl">2</code> = <strong>blocking error</strong>, stderr is fed back to Claude. PreToolUse can also emit JSON to <code class="inl">allow</code>/<code class="inl">deny</code>/<code class="inl">ask</code> and even rewrite the tool input; PostToolUse can rewrite output.</li>
+      </ul>
+      <div class="callout danger"><span class="ch">Footgun · only exit 2 blocks</span><p>An <code class="inl">exit 1</code> is treated as a <em>non-blocking</em> error &mdash; Claude logs it and proceeds anyway. If your guard &ldquo;detects&rdquo; the bad command but it runs regardless, you almost certainly exited 1 instead of 2. This is the most common hook bug there is.</p></div>
+    </div>
+
+    <!-- 6.4 -->
+    <div class="lesson" data-lesson>
+      <button class="done-toggle" aria-pressed="false"><span class="box"></span> mark done</button>
+      <h3>6.4 · Scope follows file location (and hooks merge)</h3>
+      <p class="lead">Same hierarchy as permissions in Module 02 &mdash; but with one key difference in how conflicts resolve.</p>
+      <ul>
+        <li><code class="inl">~/.claude/settings.json</code> &mdash; your hooks across all projects.</li>
+        <li><code class="inl">.claude/settings.json</code> &mdash; project hooks, committed and shared with the team.</li>
+        <li><code class="inl">.claude/settings.local.json</code> &mdash; personal, gitignored.</li>
+        <li>Managed/enterprise policy, plugin <code class="inl">hooks/hooks.json</code>, or skill/agent frontmatter (those last ones active only while that component runs).</li>
+      </ul>
+      <div class="callout note"><span class="ch">Hooks merge — they don&rsquo;t override</span><p>Unlike skills (where the most specific scope wins), <strong>all matching hooks fire</strong>, from every source. Your personal formatter and the team&rsquo;s security guard both run. Good for layering defenses; worth remembering when you&rsquo;re wondering why a hook ran &ldquo;twice.&rdquo; A subagent&rsquo;s <code class="inl">Stop</code> hook auto-converts to <code class="inl">SubagentStop</code> so it fires at the right boundary.</p></div>
+    </div>
+
+    <!-- 6.5 -->
+    <div class="lesson" data-lesson>
+      <button class="done-toggle" aria-pressed="false"><span class="box"></span> mark done</button>
+      <h3>6.5 · The three hooks to write first</h3>
+      <p class="lead">You don&rsquo;t need 27. You need these.</p>
+      <ul>
+        <li><strong>PreToolUse guard.</strong> Block the few things that must never happen &mdash; force-push to main, edits to <code class="inl">.env</code>, <code class="inl">rm -rf</code> outside a sandbox. The locked door. (Pairs with Module 02 deny rules but adds real logic.)</li>
+        <li><strong>PostToolUse formatter / linter.</strong> Auto-run prettier/eslint/gofmt after every edit so style is never a review comment again. Mechanical correctness, enforced for free.</li>
+        <li><strong>Stop &ldquo;tests must pass.&rdquo;</strong> A Stop hook that runs the suite and, on failure, blocks the stop &mdash; making verification non-optional. This is the closed loop Module 03 hinted at and Module 07 scales.</li>
+      </ul>
+      <div class="callout note"><span class="ch">Also handy</span><p><strong>Notification hooks</strong> for desktop pings when Claude needs you (use the <code class="inl">terminalSequence</code> field, since hooks have no controlling terminal). Inspect everything with <code class="inl">/hooks</code>; kill all of them in one shot with <code class="inl">disableAllHooks: true</code> when you need a clean run.</p></div>
+    </div>
+
+    <!-- 6.6 -->
+    <div class="lesson" data-lesson>
+      <button class="done-toggle" aria-pressed="false"><span class="box"></span> mark done</button>
+      <h3>6.6 · When NOT to hook</h3>
+      <p class="lead">Determinism cuts both ways. A hook runs every time &mdash; including when it&rsquo;s wrong.</p>
+      <ul>
+        <li><strong>Don&rsquo;t hook what doesn&rsquo;t need a guarantee.</strong> Guidance and preferences belong in CLAUDE.md. Over-hooking adds latency to every action and makes sessions brittle.</li>
+        <li><strong>A bad hook breaks every session.</strong> Hooks run with your shell access; a syntax error or a slow command degrades everything. Test in isolation before committing.</li>
+        <li><strong>Hooks are a security surface.</strong> They execute commands with your privileges &mdash; quote variables, validate stdin, and never pipe untrusted content into one. A careless hook is its own vulnerability.</li>
+      </ul>
+      <div class="callout gotcha"><span class="ch">The rule of three, completed</span><p>Durable facts → <strong>CLAUDE.md</strong>. Repeatable procedures → <strong>skills</strong>. Rules that must hold every time → <strong>hooks</strong>. You&rsquo;ve now got all three corners. Most messy Claude Code setups are just one of these doing another&rsquo;s job &mdash; procedures crammed in CLAUDE.md, or a safety rule left as a polite note.</p></div>
+    </div>
+
+    <!-- Try it -->
+    <div class="lesson" data-lesson>
+      <button class="done-toggle" aria-pressed="false"><span class="box"></span> mark done</button>
+      <h3>Try it yourself</h3>
+      <p class="lead">Tick as you go &mdash; these feed your meter.</p>
+      <ul class="tasks" id="tasks">
+        <li data-task><span class="tick"></span><span class="tk">Write a PreToolUse hook that blocks one dangerous command<small>force-push or an <code class="inl">.env</code> edit; remember exit 2</small></span></li>
+        <li data-task><span class="tick"></span><span class="tk">Confirm it blocks every time, then check it shows in <code class="inl">/hooks</code><small>try to make it leak — you shouldn&rsquo;t be able to</small></span></li>
+        <li data-task><span class="tick"></span><span class="tk">Add a PostToolUse hook that formats files after edits<small>prettier / gofmt / black on the matcher</small></span></li>
+        <li data-task><span class="tick"></span><span class="tk">Add a Stop hook that runs tests and blocks on failure<small>verification becomes non-optional</small></span></li>
+        <li data-task><span class="tick"></span><span class="tk">Deliberately exit 1 instead of 2 and watch the command leak<small>so the footgun is muscle memory, not theory</small></span></li>
+      </ul>
+    </div>
+
+    <!-- Quiz -->
+    <div class="quiz" data-lesson>
+      <span class="qh">Knowledge check · 06</span>
+      <div class="q">Your PreToolUse hook correctly detects a forbidden command and exits with code <code class="inl" style="font-size:.8em">1</code>. Claude runs the command anyway. Why?</div>
+      <button class="opt" data-correct="false"><span class="lt">A</span><span>Exit 1 means success, so the hook told Claude to proceed.</span></button>
+      <button class="opt" data-correct="true"><span class="lt">B</span><span>Only exit code <code class="inl" style="font-size:.85em">2</code> blocks; exit 1 is a non-blocking error, so execution continues.</span></button>
+      <button class="opt" data-correct="false"><span class="lt">C</span><span>PreToolUse hooks can&rsquo;t block &mdash; only PostToolUse can stop actions.</span></button>
+      <button class="opt" data-correct="false"><span class="lt">D</span><span>The matcher didn&rsquo;t fire, so the hook never actually ran.</span></button>
+      <div class="verdict" id="v1"></div>
+    </div>
+
+  </div>
+</section>
+
+<section class="next">
+  <div class="wrap">
+    <h2>Module 07 is next: Going Parallel</h2>
+    <p>One Claude is a colleague. Several is a team &mdash; if you can keep them from colliding. Subagents, agent teams, and git worktrees are three different answers to &ldquo;run more than one,&rdquo; and people conflate them constantly. We won&rsquo;t.</p>
+  </div>
+</section>
+
+<nav class="pager">
+  <a class="pg prev" href="05-mcp.html"><small>previous</small>← 05 · MCP &amp; the Outside World</a>
+  <a class="pg next" href="07-parallel.html"><small>next module</small>07 · Going Parallel →</a>
+</nav>
+
+<footer class="wrap">
+  <span>OPERATOR&rsquo;S PATH · CHUNK 06</span><span>·</span>
+  <span>verified against code.claude.com/docs</span><span>·</span>
+  <span>Claude Code 2.1.x · June 2026</span>
+</footer>
+
+<div class="float-prog" id="float" hidden>
+  <div class="ring">
+    <svg width="34" height="34"><circle cx="17" cy="17" r="14" fill="none" stroke="rgba(255,255,255,.18)" stroke-width="4"/><circle id="ring" cx="17" cy="17" r="14" fill="none" stroke="#C96442" stroke-width="4" stroke-linecap="round" stroke-dasharray="88" stroke-dashoffset="88"/></svg>
+    <span class="pct" id="ringpct">0</span>
+  </div>
+  <span id="floatlabel">getting started</span>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  // ---- gate demo ----
+  var c = {cb:0, cl:0, hb:0, hl:0};
+  var LEAK = 0.12; // CLAUDE.md leak probability
+  function setLight(el, leaked){
+    el.className = "light " + (leaked ? "leaked" : "blocked");
+    el.textContent = leaked ? "▣ LEAKED — pushed to main" : "■ blocked";
+  }
+  function paint(){
+    document.getElementById("cb").textContent = c.cb;
+    document.getElementById("cl").textContent = c.cl;
+    document.getElementById("hb").textContent = c.hb;
+    document.getElementById("hl").textContent = c.hl;
+  }
+  function attempt(){
+    var leaked = Math.random() < LEAK;
+    if(leaked) c.cl++; else c.cb++;
+    setLight(document.getElementById("lc"), leaked);
+    c.hb++; // hook always blocks
+    setLight(document.getElementById("lh"), false);
+    paint();
+    return leaked;
+  }
+  function message(){
+    var total = c.cb + c.cl;
+    var m = document.getElementById("gmsg");
+    if(total === 0){ m.innerHTML = "Both sides forbid the same force-push. Run attempts and watch the &ldquo;leaked&rdquo; counts."; return; }
+    if(c.cl === 0){
+      m.innerHTML = "So far CLAUDE.md held — but it&rsquo;s a coin weighted ~88/12, not a lock. Keep going; a leak is coming.";
+    } else {
+      m.innerHTML = "<b>CLAUDE.md has now leaked " + c.cl + " time" + (c.cl>1?"s":"") + " out of " + total + ".</b> The hook: <b>0</b>. For a rule that must hold, &ldquo;usually&rdquo; <em>is</em> the breach — and the only acceptable leak count is zero.";
+    }
+  }
+  document.getElementById("gattempt").addEventListener("click", function(){ attempt(); message(); });
+  document.getElementById("grun").addEventListener("click", function(){
+    for(var i=0;i<25;i++){ attempt(); }
+    message();
+  });
+  document.getElementById("greset").addEventListener("click", function(){
+    c = {cb:0,cl:0,hb:0,hl:0}; paint();
+    document.getElementById("lc").className = "light"; document.getElementById("lc").textContent = "— idle";
+    document.getElementById("lh").className = "light"; document.getElementById("lh").textContent = "— idle";
+    document.getElementById("gmsg").innerHTML = "Both sides forbid the same force-push. One asks nicely; one enforces in code. Run a few attempts — then run 25 — and watch the &ldquo;leaked&rdquo; counts diverge.";
+  });
+  paint();
+
+  // ---- progress engine ----
+  var toggles = Array.prototype.slice.call(document.querySelectorAll(".done-toggle"));
+  var tasks = Array.prototype.slice.call(document.querySelectorAll("#tasks li"));
+  var totalUnits = toggles.length + tasks.length + 1;
+  var quizDone = false;
+  function tally(){
+    var done=0;
+    toggles.forEach(function(t){ if(t.classList.contains("done")) done++; });
+    tasks.forEach(function(t){ if(t.classList.contains("done")) done++; });
+    if(quizDone) done++;
+    var pct = Math.round(done/totalUnits*100);
+    document.getElementById("bar").style.width = pct+"%";
+    document.getElementById("metaProg").textContent = "MODULE 06 / 08 · "+pct+"% complete";
+    document.getElementById("ring").style.strokeDashoffset = 88-(88*pct/100);
+    document.getElementById("ringpct").textContent = pct;
+    var f=document.getElementById("float"); f.hidden=(pct===0);
+    var label=document.getElementById("floatlabel");
+    if(pct===0) label.textContent="getting started";
+    else if(pct<50) label.textContent="warming up";
+    else if(pct<100) label.textContent="most of the way";
+    else { label.textContent="module clear — go to 07"; f.style.background="#2E6E5B"; }
+  }
+  toggles.forEach(function(t){
+    t.addEventListener("click", function(){
+      var on=t.classList.toggle("done"); t.setAttribute("aria-pressed",on);
+      t.lastChild.textContent = on ? " done" : " mark done"; tally();
+    });
+  });
+  tasks.forEach(function(li){ li.addEventListener("click", function(){ li.classList.toggle("done"); tally(); }); });
+
+  document.querySelectorAll(".copy").forEach(function(btn){
+    btn.addEventListener("click", function(){
+      var txt=btn.getAttribute("data-copy");
+      navigator.clipboard && navigator.clipboard.writeText(txt).then(function(){
+        var o=btn.textContent; btn.textContent="copied ✓"; setTimeout(function(){ btn.textContent=o; },1300);
+      });
+    });
+  });
+
+  var opts = Array.prototype.slice.call(document.querySelectorAll(".opt"));
+  var verdict = document.getElementById("v1");
+  opts.forEach(function(o){
+    o.addEventListener("click", function(){
+      if(quizDone) return;
+      var right = o.getAttribute("data-correct")==="true";
+      opts.forEach(function(x){ x.disabled=true; if(x.getAttribute("data-correct")==="true") x.classList.add("correct"); });
+      if(!right) o.classList.add("wrong");
+      verdict.className="verdict show "+(right?"right":"nope");
+      verdict.innerHTML = right
+        ? "<b>Right.</b> Only exit code 2 blocks. Exit 1 is a non-blocking error — Claude notes it and carries on. This is the #1 hook bug: the logic is perfect, the exit code is wrong. Change <code class='inl'>exit 1</code> to <code class='inl'>exit 2</code> and the door locks."
+        : "<b>No.</b> The hook fired and detected correctly — the problem is the exit code. Only <code class='inl'>exit 2</code> blocks; <code class='inl'>exit 1</code> is treated as a non-blocking error and execution continues. (C is false — PreToolUse is exactly where blocking happens; D contradicts the premise that it detected the command.)";
+      quizDone=true; tally();
+    });
+  });
+
+  tally();
+})();
+</script>
+<script>
+(function(){
+  var t=document.querySelector('.navtoggle'),
+      s=document.querySelector('.sidenav'),
+      c=document.querySelector('.navscrim');
+  if(!t||!s) return;
+  function close(){s.classList.remove('open'); if(c)c.classList.remove('open');}
+  t.addEventListener('click',function(){
+    var o=s.classList.toggle('open'); if(c)c.classList.toggle('open',o);
+  });
+  if(c)c.addEventListener('click',close);
+  s.addEventListener('click',function(e){ if(e.target.closest('a')) close(); });
+  document.addEventListener('keydown',function(e){ if(e.key==='Escape') close(); });
+})();
+</script>
+
+</body>
+</html>

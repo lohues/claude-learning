@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Operator's Path · 03 Context Engineering</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F2EEE6; --paper-2:#E8E1D4; --panel:#FBF9F4;
+    --ink:#1B1915; --slate:#6E665A; --slate-2:#928979;
+    --clay:#C96442; --clay-deep:#A84E30; --clay-soft:#F0D9CE;
+    --signal:#2E6E5B; --signal-soft:#D6E6DF;
+    --amber:#C98A1F; --amber-soft:#F2E3C4;
+    --deny:#A23C3C; --deny-soft:#EFD7D3;
+    --hist:#5E6E96; --hist-soft:#DBE0EC;
+    --term-bg:#16140F; --term-fg:#ECE6D8; --term-dim:#8E8674;
+    --line:#D8D0C0; --line-strong:#C4BAA6;
+    --display:"Bricolage Grotesque",serif;
+    --body:"IBM Plex Sans",sans-serif;
+    --mono:"JetBrains Mono",monospace;
+    --r:14px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0; background:var(--paper); color:var(--ink); font-family:var(--body); font-size:17px; line-height:1.62; -webkit-font-smoothing:antialiased}
+  ::selection{background:var(--clay-soft)}
+  a{color:var(--clay-deep)}
+  .wrap{max-width:1180px; margin:0 auto; padding:0 24px}
+
+  .topbar{position:sticky; top:0; z-index:50; background:rgba(242,238,230,.86); backdrop-filter:blur(10px); border-bottom:1px solid var(--line)}
+  .topbar-in{display:flex; align-items:center; gap:18px; height:60px}
+  a.brand{font-family:var(--mono); font-weight:700; font-size:14px; letter-spacing:.04em; display:flex; align-items:center; gap:9px; text-decoration:none; color:inherit}
+  .brand .dot{width:11px; height:11px; border-radius:50%; background:var(--clay); box-shadow:0 0 0 3px var(--clay-soft)}
+  .topbar .meta{margin-left:auto; font-family:var(--mono); font-size:12px; color:var(--slate); letter-spacing:.03em}
+  .pbar{height:3px; background:var(--paper-2)}
+  .pbar > i{display:block; height:100%; width:0; background:linear-gradient(90deg,var(--clay),var(--clay-deep)); transition:width .5s cubic-bezier(.4,0,.2,1)}
+
+  /* ---------- sidebar nav ---------- */
+  .navtoggle{display:inline-flex; align-items:center; justify-content:center; width:38px; height:38px; border:1px solid var(--line); border-radius:10px; background:var(--paper); color:var(--ink); cursor:pointer; padding:0; flex:0 0 auto}
+  .navtoggle span{display:block; width:17px; height:2px; background:currentColor; border-radius:2px; position:relative}
+  .navtoggle span::before,.navtoggle span::after{content:""; position:absolute; left:0; width:17px; height:2px; background:currentColor; border-radius:2px}
+  .navtoggle span::before{top:-5px} .navtoggle span::after{top:5px}
+  .sidenav{position:fixed; top:0; left:0; bottom:0; width:250px; z-index:70; background:var(--panel); border-right:1px solid var(--line); display:flex; flex-direction:column; padding:18px 14px; overflow-y:auto; transform:translateX(-100%); transition:transform .25s ease}
+  .sidenav.open{transform:none}
+  .sidehead{display:flex; align-items:center; gap:9px; font-family:var(--mono); font-weight:700; font-size:13px; letter-spacing:.04em; text-decoration:none; color:inherit; padding:4px 8px 14px; border-bottom:1px solid var(--line); margin-bottom:12px}
+  .sidehead .dot{width:11px; height:11px; border-radius:50%; background:var(--clay); box-shadow:0 0 0 3px var(--clay-soft); flex:0 0 auto}
+  .sidenav-list{display:flex; flex-direction:column; gap:4px}
+  .mp{display:flex; align-items:center; gap:10px; text-decoration:none; padding:9px 12px; border-radius:10px; border:1px solid transparent; background:transparent; color:var(--slate); font-family:var(--mono); font-size:12.5px; white-space:nowrap; transition:.15s}
+  .mp:hover{background:var(--paper); color:var(--ink)}
+  .mp .mpn{font-weight:700; flex:0 0 auto; width:22px; text-align:center}
+  .mp .mpl{font-size:12px}
+  .mp.current{background:var(--clay-soft); border-color:var(--clay); color:var(--clay-deep)}
+  .mp.off{opacity:.42; pointer-events:none}
+  .mp.home .mpn{color:var(--clay)}
+  .navscrim{position:fixed; inset:0; background:rgba(20,18,14,.42); z-index:65; opacity:0; pointer-events:none; transition:opacity .25s}
+  .navscrim.open{opacity:1; pointer-events:auto}
+  @media(min-width:1100px){
+    .sidenav{transform:none}
+    body{padding-left:250px}
+    .navtoggle{display:none}
+    .navscrim{display:none}
+  }
+
+  .hero{padding:58px 0 16px}
+  .eyebrow{font-family:var(--mono); font-size:12.5px; letter-spacing:.18em; text-transform:uppercase; color:var(--clay-deep); font-weight:500}
+  .hero h1{font-family:var(--display); font-weight:800; line-height:1.03; font-size:clamp(38px,6.2vw,66px); letter-spacing:-.02em; margin:14px 0 0}
+  .hero h1 .thin{font-weight:400; color:var(--slate)}
+  .hero p.lede{font-size:20px; color:var(--slate); max-width:60ch; margin:18px 0 0}
+
+  /* ---------- context gauge (signature) ---------- */
+  .gauge{background:var(--panel); border:1px solid var(--line-strong); border-radius:20px; padding:24px 26px 26px; margin:36px 0 6px; box-shadow:0 20px 50px -34px rgba(0,0,0,.4)}
+  .glabel{font-family:var(--mono); font-size:12px; letter-spacing:.1em; text-transform:uppercase; color:var(--slate); margin-bottom:16px; display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap}
+  .glabel .win{color:var(--clay-deep)}
+  .track{position:relative; height:46px; background:var(--paper-2); border-radius:10px; overflow:hidden; display:flex}
+  .seg{height:100%; transition:width .45s cubic-bezier(.4,0,.2,1); position:relative}
+  .seg.base{background:var(--slate-2)}
+  .seg.claudemd{background:var(--signal)}
+  .seg.mcp{background:var(--amber)}
+  .seg.files{background:var(--clay)}
+  .seg.history{background:var(--hist)}
+  .track .dz{position:absolute; top:-3px; bottom:-3px; left:95%; width:2px; background:var(--deny); z-index:3}
+  .track .dz::after{content:"95%"; position:absolute; top:-16px; left:-12px; font-family:var(--mono); font-size:9px; color:var(--deny); font-weight:700}
+  .readout{display:flex; align-items:baseline; gap:14px; margin:18px 0 4px; flex-wrap:wrap}
+  .readout .big{font-family:var(--display); font-weight:800; font-size:38px; line-height:1; letter-spacing:-.02em}
+  .readout .tok{font-family:var(--mono); font-size:13px; color:var(--slate)}
+  .readout .health{margin-left:auto; font-family:var(--mono); font-size:12.5px; font-weight:700; padding:6px 13px; border-radius:99px; transition:.3s}
+  .health.good{background:var(--signal-soft); color:var(--signal)}
+  .health.ok{background:var(--amber-soft); color:var(--amber)}
+  .health.bad{background:var(--deny-soft); color:var(--deny)}
+  .controls{display:flex; flex-wrap:wrap; gap:8px; margin:18px 0 4px}
+  .ctl{font:inherit; font-family:var(--mono); font-size:12.5px; cursor:pointer; border:1px solid var(--line-strong); background:var(--paper); color:var(--ink); border-radius:9px; padding:9px 13px; transition:.15s}
+  .ctl:hover{border-color:var(--clay)}
+  .ctl.on{background:var(--amber-soft); border-color:var(--amber); color:var(--amber)}
+  .ctl.reclaim{background:var(--signal); border-color:var(--signal); color:#fff}
+  .ctl.reclaim:hover{background:#28604f}
+  .ctl.ctx{background:var(--ink); border-color:var(--ink); color:var(--paper)}
+  .legend2{display:flex; flex-wrap:wrap; gap:7px 16px; margin-top:16px; font-family:var(--mono); font-size:11.5px; color:var(--slate)}
+  .legend2 span{display:flex; align-items:center; gap:6px}
+  .legend2 i{width:11px; height:11px; border-radius:3px; display:inline-block}
+  .gmsg{margin-top:14px; font-size:14px; padding:11px 15px; border-radius:10px; background:var(--paper-2); color:var(--ink); border-left:3px solid var(--clay); min-height:42px}
+
+  section.block{padding:52px 0; border-top:1px solid var(--line)}
+  .sec-head{display:flex; align-items:baseline; gap:16px; margin-bottom:6px}
+  .sec-num{font-family:var(--mono); font-size:13px; color:var(--clay-deep); font-weight:700; letter-spacing:.05em}
+  .sec-head h2{font-family:var(--display); font-weight:800; font-size:clamp(26px,4vw,38px); letter-spacing:-.01em; margin:0}
+  .sec-sub{color:var(--slate); max-width:62ch; margin:10px 0 28px; font-size:17px}
+  .module-intro{display:flex; flex-wrap:wrap; gap:10px; margin-bottom:8px}
+  .chip{font-family:var(--mono); font-size:12px; padding:5px 11px; border-radius:99px; border:1px solid var(--line-strong); color:var(--slate); background:var(--panel)}
+  .chip.live{color:var(--signal); border-color:var(--signal); background:var(--signal-soft)}
+  .chip.flag{color:var(--clay-deep); border-color:var(--clay); background:var(--clay-soft)}
+
+  .lesson{background:var(--panel); border:1px solid var(--line); border-radius:var(--r); padding:26px 28px; margin:18px 0; position:relative}
+  .lesson h3{font-family:var(--display); font-weight:800; font-size:23px; letter-spacing:-.01em; margin:0 0 4px; padding-right:120px}
+  .lesson .lead{color:var(--slate); margin:0 0 16px; font-size:16px}
+  .lesson p{margin:14px 0}
+  .lesson ul{margin:14px 0; padding-left:0; list-style:none}
+  .lesson ul li{position:relative; padding-left:26px; margin:9px 0}
+  .lesson ul li::before{content:"›"; position:absolute; left:6px; top:-1px; color:var(--clay); font-weight:700; font-family:var(--mono)}
+  .lesson strong{font-weight:600}
+  code.inl{font-family:var(--mono); font-size:.86em; background:var(--paper-2); padding:2px 6px; border-radius:5px; color:var(--clay-deep)}
+
+  .twocol{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:16px 0}
+  @media(max-width:640px){.twocol{grid-template-columns:1fr}}
+  .card{border:1px solid var(--line); border-radius:12px; padding:16px 18px; background:var(--paper)}
+  .card.yes{border-color:#A9CEC1; background:var(--signal-soft)}
+  .card.no{border-color:#D8A39C; background:var(--deny-soft)}
+  .card h4{margin:0 0 8px; font-family:var(--mono); font-size:12px; letter-spacing:.08em; text-transform:uppercase}
+  .card.yes h4{color:var(--signal)} .card.no h4{color:var(--deny)}
+  .card ul{margin:0; padding:0; list-style:none}
+  .card li{position:relative; padding-left:20px; margin:7px 0; font-size:14.5px}
+  .card li::before{position:absolute; left:0; top:0; font-family:var(--mono); font-weight:700}
+  .card.yes li::before{content:"+"; color:var(--signal)}
+  .card.no li::before{content:"−"; color:var(--deny)}
+
+  .done-toggle{position:absolute; top:24px; right:26px; font:inherit; font-family:var(--mono); font-size:12px; letter-spacing:.03em; padding:7px 13px; border-radius:99px; border:1px solid var(--line-strong); background:var(--paper); color:var(--slate); cursor:pointer; transition:.2s; display:flex; gap:7px; align-items:center}
+  .done-toggle:hover{border-color:var(--clay)}
+  .done-toggle .box{width:13px; height:13px; border-radius:4px; border:1.5px solid var(--slate-2); display:grid; place-items:center}
+  .done-toggle.done{background:var(--signal-soft); border-color:var(--signal); color:var(--signal)}
+  .done-toggle.done .box{background:var(--signal); border-color:var(--signal)}
+  .done-toggle.done .box::after{content:"✓"; color:#fff; font-size:10px; line-height:1}
+  @media(max-width:620px){.done-toggle{position:static; margin-bottom:14px} .lesson h3{padding-right:0}}
+
+  .term{background:var(--term-bg); border-radius:12px; overflow:hidden; margin:18px 0; box-shadow:0 14px 40px -22px rgba(0,0,0,.55)}
+  .term-bar{display:flex; align-items:center; gap:7px; padding:11px 15px; background:#211E17; border-bottom:1px solid #2c2820}
+  .term-bar i{width:11px; height:11px; border-radius:50%; background:#3a352b; display:block}
+  .term-bar i:nth-child(1){background:#C96442}
+  .term-bar .ttl{margin-left:8px; font-family:var(--mono); font-size:11.5px; color:var(--term-dim); letter-spacing:.03em}
+  .term-bar .copy{margin-left:auto; font-family:var(--mono); font-size:11px; color:var(--term-dim); background:none; border:1px solid #322d24; border-radius:6px; padding:4px 9px; cursor:pointer; transition:.15s}
+  .term-bar .copy:hover{color:var(--term-fg); border-color:#4a4438}
+  .term pre{margin:0; padding:18px; overflow-x:auto; font-family:var(--mono); font-size:13px; line-height:1.7; color:var(--term-fg)}
+  .term .pr{color:var(--clay)} .term .cm{color:var(--term-dim)} .term .ok{color:#7FB59E} .term .em{color:#E3B23C} .term .key{color:#9FB6D8} .term .str{color:#C9A876} .term .dim{color:#6f685a}
+
+  .callout{border-radius:12px; padding:16px 18px; margin:18px 0; border:1px solid; font-size:15.5px}
+  .callout .ch{font-family:var(--mono); font-size:11.5px; letter-spacing:.1em; text-transform:uppercase; font-weight:700; display:block; margin-bottom:5px}
+  .callout p{margin:6px 0 0}
+  .callout.gotcha{background:var(--amber-soft); border-color:#E0C079} .callout.gotcha .ch{color:var(--amber)}
+  .callout.note{background:var(--signal-soft); border-color:#A9CEC1} .callout.note .ch{color:var(--signal)}
+  .callout.danger{background:var(--deny-soft); border-color:#D8A39C} .callout.danger .ch{color:var(--deny)}
+
+  details.deep{border:1px solid var(--line); border-radius:12px; margin:16px 0; background:var(--panel); overflow:hidden}
+  details.deep summary{cursor:pointer; padding:15px 18px; font-family:var(--mono); font-size:13px; font-weight:500; letter-spacing:.02em; color:var(--clay-deep); list-style:none; display:flex; align-items:center; gap:9px}
+  details.deep summary::-webkit-details-marker{display:none}
+  details.deep summary .pl{transition:.2s; font-weight:700}
+  details.deep[open] summary .pl{transform:rotate(45deg)}
+  details.deep .inside{padding:0 18px 18px; border-top:1px solid var(--line)}
+  details.deep .inside p:first-child{margin-top:14px}
+
+  .tasks{list-style:none; padding:0; margin:16px 0}
+  .tasks li{display:flex; gap:13px; align-items:flex-start; padding:13px 15px; border:1px solid var(--line); border-radius:10px; margin:8px 0; background:var(--panel); cursor:pointer; transition:.15s}
+  .tasks li:hover{border-color:var(--line-strong)}
+  .tasks li .tick{width:22px; height:22px; border-radius:7px; border:2px solid var(--slate-2); flex:0 0 auto; margin-top:1px; display:grid; place-items:center; transition:.2s}
+  .tasks li.done{background:var(--signal-soft); border-color:#A9CEC1}
+  .tasks li.done .tick{background:var(--signal); border-color:var(--signal)}
+  .tasks li.done .tick::after{content:"✓"; color:#fff; font-size:13px}
+  .tasks li.done .tk{text-decoration:line-through; color:var(--slate)}
+  .tasks li .tk{font-size:15.5px}
+  .tasks li .tk small{display:block; font-family:var(--mono); font-size:12px; color:var(--slate); margin-top:2px; text-decoration:none}
+
+  .quiz{background:linear-gradient(180deg,var(--panel),var(--paper)); border:1px solid var(--line-strong); border-radius:var(--r); padding:26px 28px; margin:24px 0}
+  .quiz .qh{font-family:var(--mono); font-size:12px; letter-spacing:.12em; text-transform:uppercase; color:var(--clay-deep); font-weight:700}
+  .quiz .q{font-family:var(--display); font-weight:600; font-size:20px; margin:8px 0 16px}
+  .opt{display:block; width:100%; text-align:left; font:inherit; font-size:15.5px; background:var(--paper); border:1px solid var(--line-strong); border-radius:10px; padding:13px 16px; margin:9px 0; cursor:pointer; transition:.15s; display:flex; gap:11px; align-items:center}
+  .opt:hover{border-color:var(--clay)}
+  .opt .lt{font-family:var(--mono); font-weight:700; color:var(--slate); width:18px; flex:0 0 auto}
+  .opt.correct{background:var(--signal-soft); border-color:var(--signal); color:var(--signal)} .opt.correct .lt{color:var(--signal)}
+  .opt.wrong{background:var(--deny-soft); border-color:var(--deny); color:var(--deny)} .opt.wrong .lt{color:var(--deny)}
+  .opt:disabled{cursor:default}
+  .verdict{margin-top:14px; font-size:15px; padding:13px 16px; border-radius:10px; display:none}
+  .verdict.show{display:block}
+  .verdict.right{background:var(--signal-soft); color:var(--signal)}
+  .verdict.nope{background:var(--amber-soft); color:var(--amber)}
+
+  .pager{display:flex; justify-content:space-between; gap:12px; padding:30px 24px 0; max-width:1180px; margin:0 auto}
+  .pg{text-decoration:none; font-family:var(--mono); font-size:13px; color:var(--clay-deep); border:1px solid var(--line-strong); border-radius:11px; padding:12px 17px; background:var(--panel); transition:.15s; max-width:48%}
+  .pg:hover{border-color:var(--clay)}
+  .pg small{display:block; font-size:10.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--slate-2); margin-bottom:2px}
+  .pg.next{text-align:right; margin-left:auto}
+  .pg.ghost{opacity:.45; pointer-events:none}
+
+  .next{border-top:1px solid var(--line); padding:48px 0 30px; text-align:center}
+  .next h2{font-family:var(--display); font-weight:800; font-size:30px; margin:0 0 8px}
+  .next p{color:var(--slate); max-width:54ch; margin:0 auto 22px}
+  .next .cmd{font-family:var(--mono); font-size:14px; background:var(--term-bg); color:var(--term-fg); display:inline-block; padding:13px 20px; border-radius:10px}
+  .next .cmd b{color:var(--clay)}
+
+  footer{border-top:1px solid var(--line); padding:26px 0 60px; font-family:var(--mono); font-size:12px; color:var(--slate-2); display:flex; flex-wrap:wrap; gap:8px 18px}
+
+  .float-prog{position:fixed; right:18px; bottom:18px; z-index:60; background:var(--ink); color:var(--paper); border-radius:14px; padding:13px 16px; font-family:var(--mono); font-size:12px; box-shadow:0 16px 40px -16px rgba(0,0,0,.5); display:flex; align-items:center; gap:11px}
+  .float-prog .ring{position:relative; width:34px; height:34px}
+  .float-prog svg{transform:rotate(-90deg)}
+  .float-prog .pct{position:absolute; inset:0; display:grid; place-items:center; font-weight:700; font-size:11px}
+  @media(max-width:520px){.float-prog{left:18px; right:18px; justify-content:center}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="wrap topbar-in">
+    <button class="navtoggle" aria-label="Toggle module menu" aria-controls="sidenav"><span></span></button>
+    <a class="brand" href="index.html"><span class="dot"></span> OPERATOR&rsquo;S&nbsp;PATH</a>
+    <div class="meta" id="metaProg">MODULE 03 / 08 · 0% complete</div>
+  </div>
+  <div class="pbar"><i id="bar"></i></div>
+</div>
+<aside class="sidenav" id="sidenav" aria-label="All modules">
+  <a class="sidehead" href="index.html"><span class="dot"></span> OPERATOR&rsquo;S&nbsp;PATH</a>
+  <nav class="sidenav-list">
+    <a class="mp home" href="index.html"><span class="mpn">&#9733;</span><span class="mpl">Path</span></a>
+    <a class="mp" href="01-ground-control.html"><span class="mpn">01</span><span class="mpl">Ground Control</span></a>
+    <a class="mp" href="02-trust-and-permissions.html"><span class="mpn">02</span><span class="mpl">Permissions</span></a>
+    <a class="mp current" href="03-context-engineering.html"><span class="mpn">03</span><span class="mpl">Context</span></a>
+    <a class="mp" href="04-skills.html"><span class="mpn">04</span><span class="mpl">Skills</span></a>
+    <a class="mp" href="05-mcp.html"><span class="mpn">05</span><span class="mpl">MCP</span></a>
+    <a class="mp" href="06-hooks.html"><span class="mpn">06</span><span class="mpl">Hooks</span></a>
+    <a class="mp" href="07-parallel.html"><span class="mpn">07</span><span class="mpl">Parallel</span></a>
+    <a class="mp" href="08-agentic-engineering.html"><span class="mpn">08</span><span class="mpl">Agentic Eng.</span></a>
+  </nav>
+</aside>
+<div class="navscrim" aria-hidden="true"></div>
+
+<header class="hero">
+  <div class="wrap">
+    <span class="eyebrow">Module 03 · the highest-leverage skill</span>
+    <h1>The window is attention,<br><span class="thin">not storage.</span></h1>
+    <p class="lede">More context isn&rsquo;t better. Every token competes with every other for the model&rsquo;s attention, so a full window is a <em>distracted</em> one. This module is about keeping it sharp &mdash; and it&rsquo;s the difference between an agent that holds a thread for an hour and one that forgets your instruction by turn 40.</p>
+
+    <div class="gauge" id="gauge">
+      <div class="glabel"><span>Context window &mdash; load it up, then reclaim it</span><span class="win" id="winlbl">200K tokens</span></div>
+      <div class="track" id="track"><div class="dz"></div></div>
+      <div class="readout">
+        <span class="big" id="cwpct">0%</span>
+        <span class="tok" id="cwtok">0 / 200,000 tokens used</span>
+        <span class="health good" id="cwhealth">sharp · full recall</span>
+      </div>
+      <div class="controls" id="controls"></div>
+      <div class="gmsg" id="gmsg">Start clean. Now add some load &mdash; toggle a couple of MCP servers, read a file, simulate a long session &mdash; and watch recall slide.</div>
+      <div class="legend2" id="legend2"></div>
+    </div>
+  </div>
+</header>
+
+<section class="block" id="m3">
+  <div class="wrap">
+    <div class="sec-head"><span class="sec-num">MODULE 03</span><h2>Context Engineering</h2></div>
+    <div class="module-intro">
+      <span class="chip live">● core</span>
+      <span class="chip flag">highest leverage</span>
+      <span class="chip">~28 min read</span>
+      <span class="chip">6 lessons · 1 check</span>
+    </div>
+    <p class="sec-sub">What the context window actually is, why it rots as it fills, the three commands that manage it, and the three places durable knowledge belongs &mdash; CLAUDE.md, auto memory, and (a preview of) hooks.</p>
+
+    <!-- 3.1 -->
+    <div class="lesson" data-lesson>
+      <button class="done-toggle" aria-pressed="false"><span class="box"></span> mark done</button>
+      <h3>3.1 · Finite working memory &amp; context rot</h3>
+      <p class="lead">The window is large &mdash; 200K tokens on current models &mdash; but it&rsquo;s working memory, not a hard drive.</p>
+      <p>Because every token attends to every other token, the model&rsquo;s grip on any single detail weakens as the window fills. Anthropic calls this <strong>context rot</strong>. The symptom you&rsquo;ll feel in practice: Claude &ldquo;forgets&rdquo; an instruction from 40 turns ago, or quietly reintroduces a bug you already fixed. That&rsquo;s not the model getting dumber &mdash; it&rsquo;s the window full of noise drowning the signal.</p>
+      <p>So the goal of this whole module inverts most people&rsquo;s instinct: <strong>not</strong> &ldquo;give it everything just in case,&rdquo; but the <em>smallest set of high-signal tokens</em> that still gets the job done.</p>
+      <div class="callout note"><span class="ch">Anchor</span><p>Anthropic frames context engineering as finding &ldquo;the smallest possible set of high-signal tokens that maximize the likelihood of the desired outcome.&rdquo; Hold that sentence; the rest of the module is mechanics for living it.</p></div>
+    </div>
+
+    <!-- 3.2 -->
+    <div class="lesson" data-lesson>
+      <button class="done-toggle" aria-pressed="false"><span class="box"></span> mark done</button>
+      <h3>3.2 · Read the gauge first: <code class="inl">/context</code></h3>
+      <p class="lead">You can&rsquo;t manage what you can&rsquo;t see. <code class="inl">/context</code> breaks down what&rsquo;s eating the window, by category.</p>
+      <div class="term">
+        <div class="term-bar"><i></i><i></i><i></i><span class="ttl">/context</span></div>
+        <pre><span class="pr">&gt;</span> /context
+<span class="dim">context window — 200,000 tokens</span>
+  system + tools        14,200   <span class="dim">▓▓</span>
+  MCP tool definitions  26,600   <span class="dim">▓▓▓▓</span>  <span class="em">← bigger than you think</span>
+  CLAUDE.md              3,100   <span class="dim">▓</span>
+  files read this session 41,000 <span class="dim">▓▓▓▓▓▓</span>
+  conversation          22,400   <span class="dim">▓▓▓</span>
+<span class="ok">total in use: 107,300 (54%)</span></pre>
+      </div>
+      <p>The reliable surprise: it&rsquo;s rarely the conversation that fills the window &mdash; it&rsquo;s <strong>MCP tool definitions and large tool/file outputs</strong>. A single connected server can quietly cost tens of thousands of tokens before you type a word (the full reckoning is Module 05). Run <code class="inl">/context</code> early and whenever things feel sluggish.</p>
+    </div>
+
+    <!-- 3.3 -->
+    <div class="lesson" data-lesson>
+      <button class="done-toggle" aria-pressed="false"><span class="box"></span> mark done</button>
+      <h3>3.3 · The two reclaim commands</h3>
+      <p class="lead">When the gauge climbs, you have two levers &mdash; and they do different things.</p>
+      <ul>
+        <li><strong><code class="inl">/clear</code></strong> &mdash; wipes the conversation history entirely. The clean reset between <em>unrelated</em> tasks. Cheap, total, lossy.</li>
+        <li><strong><code class="inl">/compact</code></strong> &mdash; summarizes the session so far into a compact form, freeing space while keeping the gist. The mid-task lever when you&rsquo;re deep but the window&rsquo;s filling.</li>
+      </ul>
+      <div class="callout note"><span class="ch">Survives compaction</span><p>Your <strong>root <code class="inl">CLAUDE.md</code> is re-read from disk and re-injected</strong> after a compact, so project memory persists. Nested CLAUDE.md files do <em>not</em> automatically come back &mdash; another reason to keep durable rules in the root file.</p></div>
+      <div class="callout gotcha"><span class="ch">Gotcha · don&rsquo;t wait for auto-compact</span><p>Claude Code auto-compacts around <strong>95%</strong> capacity, dropping old tool outputs first. By then you&rsquo;ve already been operating in the rot zone for a while. Compact <em>deliberately</em> at a natural breakpoint (~60&ndash;70%), not when the system forces it mid-thought. And remember <code class="inl">/compact</code> is lossy &mdash; don&rsquo;t do it in the middle of subtle surgery.</p></div>
+    </div>
+
+    <!-- 3.4 -->
+    <div class="lesson" data-lesson>
+      <button class="done-toggle" aria-pressed="false"><span class="box"></span> mark done</button>
+      <h3>3.4 · <code class="inl">CLAUDE.md</code> &mdash; durable project memory</h3>
+      <p class="lead">The file that loads <em>every</em> session. Treat it like a constitution, not a notebook.</p>
+      <p>Run <code class="inl">/init</code> and Claude scans the repo and drafts one. The discipline is knowing what earns a place in it &mdash; because every line you add is a line loaded into every future window.</p>
+      <div class="twocol">
+        <div class="card yes"><h4>Belongs in CLAUDE.md</h4><ul>
+          <li>Build / test / lint commands</li>
+          <li>Architecture in two lines</li>
+          <li>Naming &amp; style conventions</li>
+          <li>The non-obvious &ldquo;golden rules&rdquo;</li>
+          <li>Key paths &amp; entry points</li>
+        </ul></div>
+        <div class="card no"><h4>Does NOT belong</h4><ul>
+          <li>Step-by-step procedures → <em>skills (Mod 04)</em></li>
+          <li>Anything readable from the code itself</li>
+          <li>Per-task or one-off details</li>
+          <li>Hard rules that must never break → <em>hooks (Mod 06)</em></li>
+          <li>Walls of text &ldquo;just in case&rdquo;</li>
+        </ul></div>
+      </div>
+      <p><strong>Nesting &amp; imports:</strong> a CLAUDE.md in a subdirectory loads on demand when Claude works there, and <code class="inl">@path/to/file</code> imports pull in other files up to <strong>5 hops</strong> deep. Use this to keep the root lean and push area-specific detail down to where it&rsquo;s relevant.</p>
+      <div class="callout gotcha"><span class="ch">The 200-line rule</span><p>Past roughly <strong>200 lines</strong>, a CLAUDE.md both eats noticeable context <em>and</em> gets followed less reliably. A bloated memory file is paradoxically a less-obeyed one &mdash; the same rot, applied to your own instructions. Keep it short and high-signal. If it&rsquo;s growing, that&rsquo;s a signal something belongs in a skill or a hook instead.</p></div>
+    </div>
+
+    <!-- 3.5 -->
+    <div class="lesson" data-lesson>
+      <button class="done-toggle" aria-pressed="false"><span class="box"></span> mark done</button>
+      <h3>3.5 · Auto memory &mdash; the &ldquo;Second Brain&rdquo;</h3>
+      <p class="lead">Memory Claude writes <em>for itself</em>, persisting across sessions.</p>
+      <p>Beyond the CLAUDE.md you author, Claude Code can maintain its own markdown memory store &mdash; browsable and editable with <code class="inl">/memory</code> &mdash; where it records learnings so they survive between sessions (the course&rsquo;s &ldquo;Second Brain&rdquo; / &ldquo;Auto Memory&rdquo;). The same ~200-line discipline applies; it&rsquo;s context too.</p>
+      <div class="callout danger"><span class="ch">The load-bearing caveat</span><p>Both CLAUDE.md and auto memory are <strong>context, not enforced policy</strong>. Claude reads them and <em>usually</em> follows them &mdash; but &ldquo;usually&rdquo; isn&rsquo;t &ldquo;always.&rdquo; For a rule that must hold <strong>100%</strong> of the time (never read <code class="inl">.env</code>, always run tests before commit), a memory line is the wrong tool. You want a <strong>hook</strong> &mdash; deterministic enforcement, covered in Module 06. This is the single most important distinction in the course: <em>memory persuades; hooks guarantee.</em></p></div>
+    </div>
+
+    <!-- 3.6 -->
+    <div class="lesson" data-lesson>
+      <button class="done-toggle" aria-pressed="false"><span class="box"></span> mark done</button>
+      <h3>3.6 · The discipline, in three habits</h3>
+      <p class="lead">Everything above collapses into this.</p>
+      <ul>
+        <li><strong>Smallest high-signal set.</strong> Don&rsquo;t paste the whole spec; give Claude identifiers and let it retrieve just-in-time. Lightweight pointers beat pre-loaded dumps.</li>
+        <li><strong>Compact at breakpoints, not at 95%.</strong> Treat context like a workspace you tidy between tasks &mdash; proactively, on your terms.</li>
+        <li><strong>Right home for each thing.</strong> Durable facts → CLAUDE.md. Repeatable procedures → skills. Rules that must never break → hooks. Put it where it belongs and the window stays clean.</li>
+      </ul>
+      <details class="deep">
+        <summary><span class="pl">+</span> Why &ldquo;just-in-time retrieval&rdquo; beats front-loading</summary>
+        <div class="inside">
+          <p>Front-loading everything assumes you know in advance exactly what Claude will need &mdash; you usually don&rsquo;t, and the surplus becomes rot. Just-in-time means Claude holds lightweight identifiers (file paths, function names, a table of contents) and pulls the full content only at the moment it acts. It&rsquo;s the same instinct as a senior engineer who doesn&rsquo;t memorize the codebase but knows exactly where to look. Anthropic&rsquo;s context-engineering guidance leans hard on this pattern, alongside compaction and structured note-taking, as the way agents stay coherent over long horizons.</p>
+        </div>
+      </details>
+    </div>
+
+    <!-- Try it -->
+    <div class="lesson" data-lesson>
+      <button class="done-toggle" aria-pressed="false"><span class="box"></span> mark done</button>
+      <h3>Try it yourself</h3>
+      <p class="lead">Tick as you go &mdash; these feed your meter.</p>
+      <ul class="tasks" id="tasks">
+        <li data-task><span class="tick"></span><span class="tk">Run <code class="inl">/context</code> in a real session and find the biggest consumer<small>bet it&rsquo;s MCP defs or file reads, not the chat</small></span></li>
+        <li data-task><span class="tick"></span><span class="tk">Run <code class="inl">/init</code>, then delete every line Claude could infer from the code<small>aim to land under 200 lines</small></span></li>
+        <li data-task><span class="tick"></span><span class="tk">Add one &ldquo;golden rule&rdquo; to CLAUDE.md and confirm it&rsquo;s honored<small>e.g. a naming or import convention</small></span></li>
+        <li data-task><span class="tick"></span><span class="tk">Hit ~70% context, then <code class="inl">/compact</code> at a breakpoint &mdash; watch it drop<small>note that root CLAUDE.md survives</small></span></li>
+        <li data-task><span class="tick"></span><span class="tk">Open <code class="inl">/memory</code> and read what Claude has saved for itself<small>edit or prune anything stale</small></span></li>
+      </ul>
+    </div>
+
+    <!-- Quiz -->
+    <div class="quiz" data-lesson>
+      <span class="qh">Knowledge check · 03</span>
+      <div class="q">You&rsquo;re 60 turns into a tricky refactor. The window&rsquo;s at 92% and Claude just reintroduced a bug you fixed an hour ago. Best move?</div>
+      <button class="opt" data-correct="false"><span class="lt">A</span><span>Push through &mdash; re-explain the bug every turn until it sticks.</span></button>
+      <button class="opt" data-correct="false"><span class="lt">B</span><span><code class="inl" style="font-size:.85em">/clear</code> and start the refactor over with a cleaner prompt.</span></button>
+      <button class="opt" data-correct="true"><span class="lt">C</span><span><code class="inl" style="font-size:.85em">/compact</code> at a natural breakpoint to reclaim space, and capture the fix as a rule in CLAUDE.md so it can&rsquo;t get lost again.</span></button>
+      <button class="opt" data-correct="false"><span class="lt">D</span><span>Add a long, detailed note to the prompt explaining exactly what the bug was.</span></button>
+      <div class="verdict" id="v1"></div>
+    </div>
+
+  </div>
+</section>
+
+<section class="next">
+  <div class="wrap">
+    <h2>Module 04 is next: Skills</h2>
+    <p>You just learned procedures don&rsquo;t belong in CLAUDE.md. Module 04 is where they do belong &mdash; reusable workflows that load only when needed, at near-zero context cost.</p>
+  </div>
+</section>
+
+<nav class="pager">
+  <a class="pg prev" href="02-trust-and-permissions.html"><small>previous</small>← 02 · Trust &amp; Permissions</a>
+  <a class="pg next" href="04-skills.html"><small>next module</small>04 · Skills →</a>
+</nav>
+
+<footer class="wrap">
+  <span>OPERATOR&rsquo;S PATH · CHUNK 03</span><span>·</span>
+  <span>verified against code.claude.com/docs</span><span>·</span>
+  <span>Claude Code 2.1.x · June 2026</span>
+</footer>
+
+<div class="float-prog" id="float" hidden>
+  <div class="ring">
+    <svg width="34" height="34"><circle cx="17" cy="17" r="14" fill="none" stroke="rgba(255,255,255,.18)" stroke-width="4"/><circle id="ring" cx="17" cy="17" r="14" fill="none" stroke="#C96442" stroke-width="4" stroke-linecap="round" stroke-dasharray="88" stroke-dashoffset="88"/></svg>
+    <span class="pct" id="ringpct">0</span>
+  </div>
+  <span id="floatlabel">getting started</span>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var WIN = 200000;
+
+  // ---- context gauge state ----
+  var state = {
+    base: 14200,      // fixed
+    claudemd: 3100,   // toggle
+    mcpgh: 0,         // toggle -> 17600
+    mcpmisc: 0,       // toggle -> 9000
+    files: 0,         // +12000 each
+    history: 6000     // +16000 each; /compact & /clear reduce
+  };
+  var segs = [
+    {key:"base",     cls:"base",     label:"system + tools"},
+    {key:"claudemd", cls:"claudemd", label:"CLAUDE.md"},
+    {key:"mcp",      cls:"mcp",      label:"MCP tool defs"},
+    {key:"files",    cls:"files",    label:"file reads"},
+    {key:"history",  cls:"history",  label:"conversation"}
+  ];
+  function mcpTotal(){ return state.mcpgh + state.mcpmisc; }
+  function segValue(k){ return k==="mcp" ? mcpTotal() : state[k]; }
+  function total(){ return state.base + state.claudemd + mcpTotal() + state.files + state.history; }
+
+  var track = document.getElementById("track");
+  // build segment nodes once
+  var nodes = {};
+  segs.forEach(function(s){
+    var d = document.createElement("div");
+    d.className = "seg " + s.cls;
+    track.insertBefore(d, track.querySelector(".dz"));
+    nodes[s.key] = d;
+  });
+
+  var legend = document.getElementById("legend2");
+  legend.innerHTML = segs.map(function(s){
+    var color = ({base:"var(--slate-2)",claudemd:"var(--signal)",mcp:"var(--amber)",files:"var(--clay)",history:"var(--hist)"})[s.key];
+    return '<span><i style="background:'+color+'"></i>'+s.label+'</span>';
+  }).join("");
+
+  function fmt(n){ return n.toLocaleString("en-US"); }
+
+  function render(msg){
+    var t = total();
+    var pct = Math.min(100, Math.round(t/WIN*100));
+    segs.forEach(function(s){
+      nodes[s.key].style.width = (segValue(s.key)/WIN*100) + "%";
+    });
+    document.getElementById("cwpct").textContent = pct + "%";
+    document.getElementById("cwtok").textContent = fmt(t) + " / 200,000 tokens used";
+    var h = document.getElementById("cwhealth");
+    var label, cls;
+    if(pct < 55){ label="sharp · full recall"; cls="good"; }
+    else if(pct < 78){ label="fine · holding the thread"; cls="good"; }
+    else if(pct < 90){ label="getting fuzzy · losing detail"; cls="ok"; }
+    else if(pct < 95){ label="context rot · forgetting earlier turns"; cls="bad"; }
+    else { label="critical · auto-compact imminent"; cls="bad"; }
+    h.className = "health " + cls;
+    h.textContent = label;
+    if(msg) document.getElementById("gmsg").innerHTML = msg;
+  }
+
+  var controls = [
+    {id:"claudemd", label:"toggle CLAUDE.md", type:"toggle",
+     on:function(){ return state.claudemd>0; },
+     act:function(){ state.claudemd = state.claudemd>0 ? 0 : 3100;
+        return state.claudemd>0 ? "CLAUDE.md loaded (~3.1K). Cheap, and it survives <code class='inl'>/compact</code> — the best token you&rsquo;ll spend." : "CLAUDE.md off. You just lost your project conventions every session."; }},
+    {id:"mcpgh", label:"+ GitHub MCP (94 tools)", type:"toggle",
+     on:function(){ return state.mcpgh>0; },
+     act:function(){ state.mcpgh = state.mcpgh>0 ? 0 : 17600;
+        return state.mcpgh>0 ? "GitHub&rsquo;s MCP server adds ~17.6K tokens of tool definitions — <em>before you ask it anything</em>. This is why Module 05 is mostly about restraint." : "GitHub MCP disconnected. ~17.6K reclaimed instantly."; }},
+    {id:"mcpmisc", label:"+ 3 more MCP servers", type:"toggle",
+     on:function(){ return state.mcpmisc>0; },
+     act:function(){ state.mcpmisc = state.mcpmisc>0 ? 0 : 9000;
+        return state.mcpmisc>0 ? "Three more servers, ~9K more in definitions. Every one taxes every single turn whether you use it or not." : "Extra servers off. ~9K back."; }},
+    {id:"files", label:"+ read a big file", type:"add",
+     act:function(){ state.files += 12000;
+        return "Read a large file (+12K). Big file and tool outputs are the quiet window-killers — they sit there for the rest of the session."; }},
+    {id:"session", label:"simulate a long session (+~16K)", type:"add",
+     act:function(){ state.history += 16000;
+        return "16K more conversation. Notice history grows steadily — this is what eventually forces an auto-compact if you never intervene."; }},
+    {id:"context", label:"/context", type:"ctx",
+     act:function(){ return "<b>/context</b> doesn&rsquo;t change anything — it just shows the breakdown so you can <em>decide</em>. Look at which color dominates the bar before you reclaim."; }},
+    {id:"compact", label:"/compact", type:"reclaim",
+     act:function(){
+        var saved = 0;
+        if(state.history>2500){ saved += state.history-2500; state.history=2500; }
+        if(state.files>2000){ saved += state.files-2000; state.files=2000; }
+        return saved>0 ? "<b>/compact</b> summarized the session — reclaimed ~"+fmt(saved)+" tokens, kept the gist. Root CLAUDE.md was re-injected automatically. This is your main mid-task lever." : "Already compact — nothing meaningful to summarize.";
+     }},
+    {id:"clear", label:"/clear", type:"reclaim",
+     act:function(){ state.history=0; state.files=0;
+        return "<b>/clear</b> wiped history and file context to zero. Total reset for an unrelated task. MCP defs and CLAUDE.md stay — they reload every turn regardless."; }}
+  ];
+
+  var cwrap = document.getElementById("controls");
+  controls.forEach(function(c){
+    var b = document.createElement("button");
+    b.className = "ctl" + (c.type==="reclaim"?" reclaim":"") + (c.type==="ctx"?" ctx":"");
+    b.textContent = c.label;
+    if(c.type==="toggle" && c.on && c.on()) b.classList.add("on");
+    b.addEventListener("click", function(){
+      var msg = c.act();
+      if(c.type==="toggle"){ b.classList.toggle("on", c.on()); }
+      render(msg);
+    });
+    cwrap.appendChild(b);
+  });
+  render();
+
+  // ---- progress engine ----
+  var toggles = Array.prototype.slice.call(document.querySelectorAll(".done-toggle"));
+  var tasks = Array.prototype.slice.call(document.querySelectorAll("#tasks li"));
+  var totalUnits = toggles.length + tasks.length + 1;
+  var quizDone = false;
+  function tally(){
+    var done = 0;
+    toggles.forEach(function(t){ if(t.classList.contains("done")) done++; });
+    tasks.forEach(function(t){ if(t.classList.contains("done")) done++; });
+    if(quizDone) done++;
+    var pct = Math.round(done/totalUnits*100);
+    document.getElementById("bar").style.width = pct+"%";
+    document.getElementById("metaProg").textContent = "MODULE 03 / 08 · "+pct+"% complete";
+    document.getElementById("ring").style.strokeDashoffset = 88-(88*pct/100);
+    document.getElementById("ringpct").textContent = pct;
+    var f = document.getElementById("float"); f.hidden=(pct===0);
+    var label=document.getElementById("floatlabel");
+    if(pct===0) label.textContent="getting started";
+    else if(pct<50) label.textContent="warming up";
+    else if(pct<100) label.textContent="most of the way";
+    else { label.textContent="module clear — go to 04"; f.style.background="#2E6E5B"; }
+  }
+  toggles.forEach(function(t){
+    t.addEventListener("click", function(){
+      var on=t.classList.toggle("done"); t.setAttribute("aria-pressed",on);
+      t.lastChild.textContent = on ? " done" : " mark done"; tally();
+    });
+  });
+  tasks.forEach(function(li){ li.addEventListener("click", function(){ li.classList.toggle("done"); tally(); }); });
+
+  document.querySelectorAll(".copy").forEach(function(btn){
+    btn.addEventListener("click", function(){
+      var txt=btn.getAttribute("data-copy");
+      navigator.clipboard && navigator.clipboard.writeText(txt).then(function(){
+        var o=btn.textContent; btn.textContent="copied ✓"; setTimeout(function(){ btn.textContent=o; },1300);
+      });
+    });
+  });
+
+  var opts = Array.prototype.slice.call(document.querySelectorAll(".opt"));
+  var verdict = document.getElementById("v1");
+  opts.forEach(function(o){
+    o.addEventListener("click", function(){
+      if(quizDone) return;
+      var right = o.getAttribute("data-correct")==="true";
+      opts.forEach(function(x){ x.disabled=true; if(x.getAttribute("data-correct")==="true") x.classList.add("correct"); });
+      if(!right) o.classList.add("wrong");
+      verdict.className="verdict show "+(right?"right":"nope");
+      verdict.innerHTML = right
+        ? "<b>Right.</b> The reintroduced bug is a context-rot symptom — the window&rsquo;s too full to hold the fix. Compacting reclaims space without throwing away the refactor, and promoting the fix to CLAUDE.md makes it durable across the rest of the session (and future ones). A and D add tokens and make it worse; B throws away real progress."
+        : "<b>Not the best move.</b> The bug came back because the window is saturated — that&rsquo;s context rot. A and D <em>add</em> tokens and deepen the rot; B (<code class='inl'>/clear</code>) discards your whole refactor. The right answer is C: <code class='inl'>/compact</code> to reclaim space at a breakpoint, then promote the fix to CLAUDE.md so it survives.";
+      quizDone=true; tally();
+    });
+  });
+
+  tally();
+})();
+</script>
+<script>
+(function(){
+  var t=document.querySelector('.navtoggle'),
+      s=document.querySelector('.sidenav'),
+      c=document.querySelector('.navscrim');
+  if(!t||!s) return;
+  function close(){s.classList.remove('open'); if(c)c.classList.remove('open');}
+  t.addEventListener('click',function(){
+    var o=s.classList.toggle('open'); if(c)c.classList.toggle('open',o);
+  });
+  if(c)c.addEventListener('click',close);
+  s.addEventListener('click',function(e){ if(e.target.closest('a')) close(); });
+  document.addEventListener('keydown',function(e){ if(e.key==='Escape') close(); });
+})();
+</script>
+
+</body>
+</html>

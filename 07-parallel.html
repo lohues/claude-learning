@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Operator's Path · 07 Going Parallel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F2EEE6; --paper-2:#E8E1D4; --panel:#FBF9F4;
+    --ink:#1B1915; --slate:#6E665A; --slate-2:#928979;
+    --clay:#C96442; --clay-deep:#A84E30; --clay-soft:#F0D9CE;
+    --signal:#2E6E5B; --signal-soft:#D6E6DF;
+    --amber:#C98A1F; --amber-soft:#F2E3C4;
+    --deny:#A23C3C; --deny-soft:#EFD7D3;
+    --violet:#6E5A96; --violet-soft:#E2DBEE;
+    --term-bg:#16140F; --term-fg:#ECE6D8; --term-dim:#8E8674;
+    --line:#D8D0C0; --line-strong:#C4BAA6;
+    --display:"Bricolage Grotesque",serif;
+    --body:"IBM Plex Sans",sans-serif;
+    --mono:"JetBrains Mono",monospace;
+    --r:14px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0; background:var(--paper); color:var(--ink); font-family:var(--body); font-size:17px; line-height:1.62; -webkit-font-smoothing:antialiased}
+  ::selection{background:var(--clay-soft)}
+  a{color:var(--clay-deep)}
+  .wrap{max-width:1180px; margin:0 auto; padding:0 24px}
+
+  .topbar{position:sticky; top:0; z-index:50; background:rgba(242,238,230,.86); backdrop-filter:blur(10px); border-bottom:1px solid var(--line)}
+  .topbar-in{display:flex; align-items:center; gap:18px; height:60px}
+  a.brand{font-family:var(--mono); font-weight:700; font-size:14px; letter-spacing:.04em; display:flex; align-items:center; gap:9px; text-decoration:none; color:inherit}
+  .brand .dot{width:11px; height:11px; border-radius:50%; background:var(--clay); box-shadow:0 0 0 3px var(--clay-soft)}
+  .topbar .meta{margin-left:auto; font-family:var(--mono); font-size:12px; color:var(--slate); letter-spacing:.03em}
+  .pbar{height:3px; background:var(--paper-2)}
+  .pbar > i{display:block; height:100%; width:0; background:linear-gradient(90deg,var(--clay),var(--clay-deep)); transition:width .5s cubic-bezier(.4,0,.2,1)}
+
+  /* ---------- sidebar nav ---------- */
+  .navtoggle{display:inline-flex; align-items:center; justify-content:center; width:38px; height:38px; border:1px solid var(--line); border-radius:10px; background:var(--paper); color:var(--ink); cursor:pointer; padding:0; flex:0 0 auto}
+  .navtoggle span{display:block; width:17px; height:2px; background:currentColor; border-radius:2px; position:relative}
+  .navtoggle span::before,.navtoggle span::after{content:""; position:absolute; left:0; width:17px; height:2px; background:currentColor; border-radius:2px}
+  .navtoggle span::before{top:-5px} .navtoggle span::after{top:5px}
+  .sidenav{position:fixed; top:0; left:0; bottom:0; width:250px; z-index:70; background:var(--panel); border-right:1px solid var(--line); display:flex; flex-direction:column; padding:18px 14px; overflow-y:auto; transform:translateX(-100%); transition:transform .25s ease}
+  .sidenav.open{transform:none}
+  .sidehead{display:flex; align-items:center; gap:9px; font-family:var(--mono); font-weight:700; font-size:13px; letter-spacing:.04em; text-decoration:none; color:inherit; padding:4px 8px 14px; border-bottom:1px solid var(--line); margin-bottom:12px}
+  .sidehead .dot{width:11px; height:11px; border-radius:50%; background:var(--clay); box-shadow:0 0 0 3px var(--clay-soft); flex:0 0 auto}
+  .sidenav-list{display:flex; flex-direction:column; gap:4px}
+  .mp{display:flex; align-items:center; gap:10px; text-decoration:none; padding:9px 12px; border-radius:10px; border:1px solid transparent; background:transparent; color:var(--slate); font-family:var(--mono); font-size:12.5px; white-space:nowrap; transition:.15s}
+  .mp:hover{background:var(--paper); color:var(--ink)}
+  .mp .mpn{font-weight:700; flex:0 0 auto; width:22px; text-align:center}
+  .mp .mpl{font-size:12px}
+  .mp.current{background:var(--clay-soft); border-color:var(--clay); color:var(--clay-deep)}
+  .mp.off{opacity:.42; pointer-events:none}
+  .mp.home .mpn{color:var(--clay)}
+  .navscrim{position:fixed; inset:0; background:rgba(20,18,14,.42); z-index:65; opacity:0; pointer-events:none; transition:opacity .25s}
+  .navscrim.open{opacity:1; pointer-events:auto}
+  @media(min-width:1100px){
+    .sidenav{transform:none}
+    body{padding-left:250px}
+    .navtoggle{display:none}
+    .navscrim{display:none}
+  }
+
+  .hero{padding:58px 0 16px}
+  .eyebrow{font-family:var(--mono); font-size:12.5px; letter-spacing:.18em; text-transform:uppercase; color:var(--clay-deep); font-weight:500}
+  .hero h1{font-family:var(--display); font-weight:800; line-height:1.03; font-size:clamp(38px,6.2vw,66px); letter-spacing:-.02em; margin:14px 0 0}
+  .hero h1 .thin{font-weight:400; color:var(--slate)}
+  .hero p.lede{font-size:20px; color:var(--slate); max-width:60ch; margin:18px 0 0}
+
+  /* ---------- topology visualizer (signature) ---------- */
+  .topo{background:var(--panel); border:1px solid var(--line-strong); border-radius:20px; padding:24px 26px 26px; margin:36px 0 6px; box-shadow:0 20px 50px -34px rgba(0,0,0,.4)}
+  .topolabel{font-family:var(--mono); font-size:12px; letter-spacing:.1em; text-transform:uppercase; color:var(--slate); margin-bottom:14px}
+  .toposel{display:flex; gap:8px; margin-bottom:18px; flex-wrap:wrap}
+  .tsel{flex:1; min-width:120px; font:inherit; cursor:pointer; border:1px solid var(--line-strong); background:var(--paper); border-radius:11px; padding:12px 10px; text-align:center; transition:.15s}
+  .tsel:hover{border-color:var(--clay)}
+  .tsel .tn{font-family:var(--display); font-weight:700; font-size:15px}
+  .tsel .ts{font-family:var(--mono); font-size:10px; letter-spacing:.04em; text-transform:uppercase; color:var(--slate-2); margin-top:3px}
+  .tsel.active{border-color:var(--clay); background:#fff; box-shadow:0 0 0 3px var(--clay-soft)}
+  .tsel.active .tn{color:var(--clay-deep)}
+  .topobody{display:grid; grid-template-columns:300px 1fr; gap:22px; align-items:center}
+  @media(max-width:720px){.topobody{grid-template-columns:1fr; gap:16px}}
+  .topostage{background:var(--paper); border:1px solid var(--line); border-radius:14px; padding:10px}
+  .topostage svg{width:100%; height:auto; display:none}
+  .topostage svg.show{display:block}
+  .topo-node circle, .topo-node rect{transition:.3s}
+  .topo-node text{font-family:var(--mono); font-size:11px; font-weight:700; fill:#fff; text-anchor:middle}
+  .topo-node .sub{font-size:8px; font-weight:500}
+  .edge{stroke-width:2; fill:none}
+  .props{display:grid; gap:7px}
+  .prop{display:grid; grid-template-columns:118px 1fr; gap:10px; font-size:13.5px; padding:7px 0; border-top:1px solid var(--line)}
+  .prop:first-child{border-top:none}
+  .prop .pk{font-family:var(--mono); font-size:11px; letter-spacing:.04em; text-transform:uppercase; color:var(--slate-2); padding-top:2px}
+  .prop .pv{color:var(--ink)}
+  .prop .pv.exp{color:var(--amber); font-weight:600}
+  .prop .pv.stable{color:var(--signal); font-weight:600}
+  @media(max-width:420px){.prop{grid-template-columns:1fr; gap:1px}}
+
+  section.block{padding:52px 0; border-top:1px solid var(--line)}
+  .sec-head{display:flex; align-items:baseline; gap:16px; margin-bottom:6px}
+  .sec-num{font-family:var(--mono); font-size:13px; color:var(--clay-deep); font-weight:700; letter-spacing:.05em}
+  .sec-head h2{font-family:var(--display); font-weight:800; font-size:clamp(26px,4vw,38px); letter-spacing:-.01em; margin:0}
+  .sec-sub{color:var(--slate); max-width:62ch; margin:10px 0 28px; font-size:17px}
+  .module-intro{display:flex; flex-wrap:wrap; gap:10px; margin-bottom:8px}
+  .chip{font-family:var(--mono); font-size:12px; padding:5px 11px; border-radius:99px; border:1px solid var(--line-strong); color:var(--slate); background:var(--panel)}
+  .chip.live{color:var(--signal); border-color:var(--signal); background:var(--signal-soft)}
+  .chip.exp{color:var(--amber); border-color:var(--amber); background:var(--amber-soft)}
+
+  .lesson{background:var(--panel); border:1px solid var(--line); border-radius:var(--r); padding:26px 28px; margin:18px 0; position:relative}
+  .lesson h3{font-family:var(--display); font-weight:800; font-size:23px; letter-spacing:-.01em; margin:0 0 4px; padding-right:120px}
+  .lesson .lead{color:var(--slate); margin:0 0 16px; font-size:16px}
+  .lesson p{margin:14px 0}
+  .lesson ul{margin:14px 0; padding-left:0; list-style:none}
+  .lesson ul li{position:relative; padding-left:26px; margin:9px 0}
+  .lesson ul li::before{content:"›"; position:absolute; left:6px; top:-1px; color:var(--clay); font-weight:700; font-family:var(--mono)}
+  .lesson strong{font-weight:600}
+  code.inl{font-family:var(--mono); font-size:.86em; background:var(--paper-2); padding:2px 6px; border-radius:5px; color:var(--clay-deep)}
+
+  .done-toggle{position:absolute; top:24px; right:26px; font:inherit; font-family:var(--mono); font-size:12px; letter-spacing:.03em; padding:7px 13px; border-radius:99px; border:1px solid var(--line-strong); background:var(--paper); color:var(--slate); cursor:pointer; transition:.2s; display:flex; gap:7px; align-items:center}
+  .done-toggle:hover{border-color:var(--clay)}
+  .done-toggle .box{width:13px; height:13px; border-radius:4px; border:1.5px solid var(--slate-2); display:grid; place-items:center}
+  .done-toggle.done{background:var(--signal-soft); border-color:var(--signal); color:var(--signal)}
+  .done-toggle.done .box{background:var(--signal); border-color:var(--signal)}
+  .done-toggle.done .box::after{content:"✓"; color:#fff; font-size:10px; line-height:1}
+  @media(max-width:620px){.done-toggle{position:static; margin-bottom:14px} .lesson h3{padding-right:0}}
+
+  .term{background:var(--term-bg); border-radius:12px; overflow:hidden; margin:18px 0; box-shadow:0 14px 40px -22px rgba(0,0,0,.55)}
+  .term-bar{display:flex; align-items:center; gap:7px; padding:11px 15px; background:#211E17; border-bottom:1px solid #2c2820}
+  .term-bar i{width:11px; height:11px; border-radius:50%; background:#3a352b; display:block}
+  .term-bar i:nth-child(1){background:#C96442}
+  .term-bar .ttl{margin-left:8px; font-family:var(--mono); font-size:11.5px; color:var(--term-dim); letter-spacing:.03em}
+  .term-bar .copy{margin-left:auto; font-family:var(--mono); font-size:11px; color:var(--term-dim); background:none; border:1px solid #322d24; border-radius:6px; padding:4px 9px; cursor:pointer; transition:.15s}
+  .term-bar .copy:hover{color:var(--term-fg); border-color:#4a4438}
+  .term pre{margin:0; padding:18px; overflow-x:auto; font-family:var(--mono); font-size:13px; line-height:1.7; color:var(--term-fg)}
+  .term .pr{color:var(--clay)} .term .cm{color:var(--term-dim)} .term .ok{color:#7FB59E} .term .em{color:#E3B23C} .term .key{color:#9FB6D8} .term .str{color:#C9A876}
+
+  .callout{border-radius:12px; padding:16px 18px; margin:18px 0; border:1px solid; font-size:15.5px}
+  .callout .ch{font-family:var(--mono); font-size:11.5px; letter-spacing:.1em; text-transform:uppercase; font-weight:700; display:block; margin-bottom:5px}
+  .callout p{margin:6px 0 0}
+  .callout.gotcha{background:var(--amber-soft); border-color:#E0C079} .callout.gotcha .ch{color:var(--amber)}
+  .callout.note{background:var(--signal-soft); border-color:#A9CEC1} .callout.note .ch{color:var(--signal)}
+  .callout.danger{background:var(--deny-soft); border-color:#D8A39C} .callout.danger .ch{color:var(--deny)}
+
+  details.deep{border:1px solid var(--line); border-radius:12px; margin:16px 0; background:var(--panel); overflow:hidden}
+  details.deep summary{cursor:pointer; padding:15px 18px; font-family:var(--mono); font-size:13px; font-weight:500; letter-spacing:.02em; color:var(--clay-deep); list-style:none; display:flex; align-items:center; gap:9px}
+  details.deep summary::-webkit-details-marker{display:none}
+  details.deep summary .pl{transition:.2s; font-weight:700}
+  details.deep[open] summary .pl{transform:rotate(45deg)}
+  details.deep .inside{padding:0 18px 18px; border-top:1px solid var(--line)}
+  details.deep .inside p:first-child{margin-top:14px}
+
+  .tasks{list-style:none; padding:0; margin:16px 0}
+  .tasks li{display:flex; gap:13px; align-items:flex-start; padding:13px 15px; border:1px solid var(--line); border-radius:10px; margin:8px 0; background:var(--panel); cursor:pointer; transition:.15s}
+  .tasks li:hover{border-color:var(--line-strong)}
+  .tasks li .tick{width:22px; height:22px; border-radius:7px; border:2px solid var(--slate-2); flex:0 0 auto; margin-top:1px; display:grid; place-items:center; transition:.2s}
+  .tasks li.done{background:var(--signal-soft); border-color:#A9CEC1}
+  .tasks li.done .tick{background:var(--signal); border-color:var(--signal)}
+  .tasks li.done .tick::after{content:"✓"; color:#fff; font-size:13px}
+  .tasks li.done .tk{text-decoration:line-through; color:var(--slate)}
+  .tasks li .tk{font-size:15.5px}
+  .tasks li .tk small{display:block; font-family:var(--mono); font-size:12px; color:var(--slate); margin-top:2px; text-decoration:none}
+
+  .quiz{background:linear-gradient(180deg,var(--panel),var(--paper)); border:1px solid var(--line-strong); border-radius:var(--r); padding:26px 28px; margin:24px 0}
+  .quiz .qh{font-family:var(--mono); font-size:12px; letter-spacing:.12em; text-transform:uppercase; color:var(--clay-deep); font-weight:700}
+  .quiz .q{font-family:var(--display); font-weight:600; font-size:20px; margin:8px 0 16px}
+  .opt{display:block; width:100%; text-align:left; font:inherit; font-size:15.5px; background:var(--paper); border:1px solid var(--line-strong); border-radius:10px; padding:13px 16px; margin:9px 0; cursor:pointer; transition:.15s; display:flex; gap:11px; align-items:center}
+  .opt:hover{border-color:var(--clay)}
+  .opt .lt{font-family:var(--mono); font-weight:700; color:var(--slate); width:18px; flex:0 0 auto}
+  .opt.correct{background:var(--signal-soft); border-color:var(--signal); color:var(--signal)} .opt.correct .lt{color:var(--signal)}
+  .opt.wrong{background:var(--deny-soft); border-color:var(--deny); color:var(--deny)} .opt.wrong .lt{color:var(--deny)}
+  .opt:disabled{cursor:default}
+  .verdict{margin-top:14px; font-size:15px; padding:13px 16px; border-radius:10px; display:none}
+  .verdict.show{display:block}
+  .verdict.right{background:var(--signal-soft); color:var(--signal)}
+  .verdict.nope{background:var(--amber-soft); color:var(--amber)}
+
+  .pager{display:flex; justify-content:space-between; gap:12px; padding:30px 24px 0; max-width:1180px; margin:0 auto}
+  .pg{text-decoration:none; font-family:var(--mono); font-size:13px; color:var(--clay-deep); border:1px solid var(--line-strong); border-radius:11px; padding:12px 17px; background:var(--panel); transition:.15s; max-width:48%}
+  .pg:hover{border-color:var(--clay)}
+  .pg small{display:block; font-size:10.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--slate-2); margin-bottom:2px}
+  .pg.next{text-align:right; margin-left:auto}
+  .pg.ghost{opacity:.45; pointer-events:none}
+
+  .next{border-top:1px solid var(--line); padding:48px 0 30px; text-align:center}
+  .next h2{font-family:var(--display); font-weight:800; font-size:30px; margin:0 0 8px}
+  .next p{color:var(--slate); max-width:54ch; margin:0 auto 22px}
+  .next .cmd{font-family:var(--mono); font-size:14px; background:var(--term-bg); color:var(--term-fg); display:inline-block; padding:13px 20px; border-radius:10px}
+  .next .cmd b{color:var(--clay)}
+
+  footer{border-top:1px solid var(--line); padding:26px 0 60px; font-family:var(--mono); font-size:12px; color:var(--slate-2); display:flex; flex-wrap:wrap; gap:8px 18px}
+
+  .float-prog{position:fixed; right:18px; bottom:18px; z-index:60; background:var(--ink); color:var(--paper); border-radius:14px; padding:13px 16px; font-family:var(--mono); font-size:12px; box-shadow:0 16px 40px -16px rgba(0,0,0,.5); display:flex; align-items:center; gap:11px}
+  .float-prog .ring{position:relative; width:34px; height:34px}
+  .float-prog svg{transform:rotate(-90deg)}
+  .float-prog .pct{position:absolute; inset:0; display:grid; place-items:center; font-weight:700; font-size:11px}
+  @media(max-width:520px){.float-prog{left:18px; right:18px; justify-content:center}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="wrap topbar-in">
+    <button class="navtoggle" aria-label="Toggle module menu" aria-controls="sidenav"><span></span></button>
+    <a class="brand" href="index.html"><span class="dot"></span> OPERATOR&rsquo;S&nbsp;PATH</a>
+    <div class="meta" id="metaProg">MODULE 07 / 08 · 0% complete</div>
+  </div>
+  <div class="pbar"><i id="bar"></i></div>
+</div>
+<aside class="sidenav" id="sidenav" aria-label="All modules">
+  <a class="sidehead" href="index.html"><span class="dot"></span> OPERATOR&rsquo;S&nbsp;PATH</a>
+  <nav class="sidenav-list">
+    <a class="mp home" href="index.html"><span class="mpn">&#9733;</span><span class="mpl">Path</span></a>
+    <a class="mp" href="01-ground-control.html"><span class="mpn">01</span><span class="mpl">Ground Control</span></a>
+    <a class="mp" href="02-trust-and-permissions.html"><span class="mpn">02</span><span class="mpl">Permissions</span></a>
+    <a class="mp" href="03-context-engineering.html"><span class="mpn">03</span><span class="mpl">Context</span></a>
+    <a class="mp" href="04-skills.html"><span class="mpn">04</span><span class="mpl">Skills</span></a>
+    <a class="mp" href="05-mcp.html"><span class="mpn">05</span><span class="mpl">MCP</span></a>
+    <a class="mp" href="06-hooks.html"><span class="mpn">06</span><span class="mpl">Hooks</span></a>
+    <a class="mp current" href="07-parallel.html"><span class="mpn">07</span><span class="mpl">Parallel</span></a>
+    <a class="mp" href="08-agentic-engineering.html"><span class="mpn">08</span><span class="mpl">Agentic Eng.</span></a>
+  </nav>
+</aside>
+<div class="navscrim" aria-hidden="true"></div>
+
+<header class="hero">
+  <div class="wrap">
+    <span class="eyebrow">Module 07 · three things people call &ldquo;agents&rdquo;</span>
+    <h1>Running more than one &mdash;<br><span class="thin">without conflating three things.</span></h1>
+    <p class="lede">&ldquo;Use agents&rdquo; could mean any of three completely different mechanisms with different shapes, costs, and maturity. Subagents, agent teams, and git worktrees are <em>not</em> synonyms. Pick the wrong one and you&rsquo;ll pay 15&times; the tokens for coordination you didn&rsquo;t need &mdash; or fight file collisions you could have avoided.</p>
+
+    <div class="topo" id="topo">
+      <div class="topolabel">The three topologies &mdash; select one to see its shape and trade-offs</div>
+      <div class="toposel" id="toposel">
+        <button class="tsel" data-k="subagents"><div class="tn">Subagents</div><div class="ts">one session</div></button>
+        <button class="tsel" data-k="teams"><div class="tn">Agent teams</div><div class="ts">many sessions</div></button>
+        <button class="tsel" data-k="worktrees"><div class="tn">Worktrees</div><div class="ts">file isolation</div></button>
+      </div>
+      <div class="topobody">
+        <div class="topostage">
+          <!-- STAR: subagents -->
+          <svg id="svg-subagents" viewBox="0 0 280 200" role="img" aria-label="Subagent star topology: workers report one-way to a central lead">
+            <defs><marker id="ah-s" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#928979"/></marker></defs>
+            <line class="edge" x1="60" y1="50" x2="128" y2="92" stroke="#928979" marker-end="url(#ah-s)"/>
+            <line class="edge" x1="60" y1="150" x2="128" y2="108" stroke="#928979" marker-end="url(#ah-s)"/>
+            <line class="edge" x1="232" y1="100" x2="196" y2="100" stroke="#928979" marker-end="url(#ah-s)"/>
+            <g class="topo-node"><circle cx="160" cy="100" r="30" fill="#C96442"/><text x="160" y="98">LEAD</text><text class="sub" x="160" y="111">main ctx</text></g>
+            <g class="topo-node"><circle cx="48" cy="44" r="22" fill="#928979"/><text x="48" y="48">sub</text></g>
+            <g class="topo-node"><circle cx="48" cy="156" r="22" fill="#928979"/><text x="48" y="160">sub</text></g>
+            <g class="topo-node"><circle cx="248" cy="100" r="22" fill="#928979"/><text x="248" y="104">sub</text></g>
+          </svg>
+          <!-- MESH: teams -->
+          <svg id="svg-teams" viewBox="0 0 280 200" role="img" aria-label="Agent team mesh topology: peers communicate bidirectionally">
+            <defs><marker id="ah-t" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#6E5A96"/></marker>
+            <marker id="ah-t2" markerWidth="9" markerHeight="9" refX="2" refY="3" orient="auto"><path d="M7,0 L0,3 L7,6 Z" fill="#6E5A96"/></marker></defs>
+            <line class="edge" x1="140" y1="52" x2="232" y2="92" stroke="#6E5A96" marker-end="url(#ah-t)" marker-start="url(#ah-t2)"/>
+            <line class="edge" x1="232" y1="108" x2="148" y2="150" stroke="#6E5A96" marker-end="url(#ah-t)" marker-start="url(#ah-t2)"/>
+            <line class="edge" x1="132" y1="150" x2="48" y2="108" stroke="#6E5A96" marker-end="url(#ah-t)" marker-start="url(#ah-t2)"/>
+            <line class="edge" x1="48" y1="92" x2="120" y2="52" stroke="#6E5A96" marker-end="url(#ah-t)" marker-start="url(#ah-t2)"/>
+            <line class="edge" x1="56" y1="100" x2="224" y2="100" stroke="#6E5A96" stroke-dasharray="4 4" marker-end="url(#ah-t)" marker-start="url(#ah-t2)"/>
+            <g class="topo-node"><circle cx="130" cy="36" r="22" fill="#C96442"/><text x="130" y="40">lead</text></g>
+            <g class="topo-node"><circle cx="244" cy="100" r="22" fill="#6E5A96"/><text x="244" y="104">peer</text></g>
+            <g class="topo-node"><circle cx="140" cy="164" r="22" fill="#6E5A96"/><text x="140" y="168">peer</text></g>
+            <g class="topo-node"><circle cx="36" cy="100" r="22" fill="#6E5A96"/><text x="36" y="104">peer</text></g>
+          </svg>
+          <!-- LANES: worktrees -->
+          <svg id="svg-worktrees" viewBox="0 0 280 200" role="img" aria-label="Worktree lanes topology: isolated working directories merged at the end">
+            <defs><marker id="ah-w" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#2E6E5B"/></marker></defs>
+            <g class="topo-node"><rect x="24" y="20" width="64" height="68" rx="9" fill="#928979"/><text x="56" y="50">wt-1</text><text class="sub" x="56" y="64">backend</text></g>
+            <g class="topo-node"><rect x="108" y="20" width="64" height="68" rx="9" fill="#928979"/><text x="140" y="50">wt-2</text><text class="sub" x="140" y="64">frontend</text></g>
+            <g class="topo-node"><rect x="192" y="20" width="64" height="68" rx="9" fill="#928979"/><text x="224" y="50">wt-3</text><text class="sub" x="224" y="64">tests</text></g>
+            <line class="edge" x1="56" y1="92" x2="140" y2="138" stroke="#2E6E5B" marker-end="url(#ah-w)"/>
+            <line class="edge" x1="140" y1="92" x2="140" y2="138" stroke="#2E6E5B" marker-end="url(#ah-w)"/>
+            <line class="edge" x1="224" y1="92" x2="140" y2="138" stroke="#2E6E5B" marker-end="url(#ah-w)"/>
+            <g class="topo-node"><rect x="104" y="146" width="72" height="34" rx="9" fill="#2E6E5B"/><text x="140" y="167">merge</text></g>
+          </svg>
+        </div>
+        <div class="props" id="props"></div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<section class="block" id="m7">
+  <div class="wrap">
+    <div class="sec-head"><span class="sec-num">MODULE 07</span><h2>Going Parallel</h2></div>
+    <div class="module-intro">
+      <span class="chip live">● core</span>
+      <span class="chip">~28 min read</span>
+      <span class="chip exp">teams are experimental</span>
+      <span class="chip">6 lessons · 1 check</span>
+    </div>
+    <p class="sec-sub">The three mechanisms kept strictly apart: subagents (isolation in one session), agent teams (coordinating sessions, experimental), git worktrees (filesystem isolation) &mdash; then the framework for choosing, and the honest case for staying single.</p>
+
+    <!-- 7.1 -->
+    <div class="lesson" data-lesson>
+      <button class="done-toggle" aria-pressed="false"><span class="box"></span> mark done</button>
+      <h3>7.1 · Three answers, three shapes</h3>
+      <p class="lead">The word &ldquo;agents&rdquo; is doing too much work. Separate it into three.</p>
+      <ul>
+        <li><strong>Subagents</strong> &mdash; a <em>star</em>. One session, a lead delegating to isolated workers that report back one-way. For keeping work out of your main context window.</li>
+        <li><strong>Agent teams</strong> &mdash; a <em>mesh</em>. Multiple sessions as peers that message each other both ways. For genuine coordination. Experimental and expensive.</li>
+        <li><strong>Git worktrees</strong> &mdash; <em>parallel lanes</em>. Separate working directories you develop in independently and merge at the end. For file isolation, not agent chatter.</li>
+      </ul>
+      <p>Toggle the visualizer above through all three before reading on &mdash; the shapes are the fastest way to keep them straight.</p>
+    </div>
+
+    <!-- 7.2 -->
+    <div class="lesson" data-lesson>
+      <button class="done-toggle" aria-pressed="false"><span class="box"></span> mark done</button>
+      <h3>7.2 · Subagents &mdash; isolation inside one session</h3>
+      <p class="lead">Workers with their own context windows, spun up by the lead, reporting results back. The cheapest, most stable form of parallelism.</p>
+      <p>The key insight ties straight back to Module 03: a subagent has its <strong>own context window</strong>, so you can send it to do noisy, token-heavy work &mdash; reading 40 files to answer one question &mdash; and only the <em>answer</em> comes back to your main window. It&rsquo;s context engineering as delegation.</p>
+      <ul>
+        <li><strong>One-way.</strong> Subagents report to the lead; they don&rsquo;t talk to each other, and they <strong>cannot spawn their own subagents</strong>.</li>
+        <li><strong>Configured</strong> in <code class="inl">.claude/agents/</code> (or <code class="inl">~/.claude/agents/</code>) as markdown + YAML: <code class="inl">name</code>, <code class="inl">description</code> (the routing signal), a tight <code class="inl">tools</code> allowlist, <code class="inl">model</code> per-subagent, <code class="inl">permissionMode</code>.</li>
+        <li><strong>Built-ins:</strong> <code class="inl">Explore</code> (read-only, fast, cheap model &mdash; great for codebase search), <code class="inl">Plan</code> (research in plan mode), <code class="inl">general-purpose</code>.</li>
+        <li><strong>Cost:</strong> roughly <strong>4&ndash;7&times;</strong> a single session&rsquo;s tokens. Instrument with the <code class="inl">SubagentStart</code> / <code class="inl">SubagentStop</code> hooks from Module 06.</li>
+      </ul>
+    </div>
+
+    <!-- 7.3 -->
+    <div class="lesson" data-lesson>
+      <button class="done-toggle" aria-pressed="false"><span class="box"></span> mark done</button>
+      <h3>7.3 · Agent teams &mdash; coordinating peers <span style="font-size:.6em;color:var(--amber);font-family:var(--mono)">EXPERIMENTAL</span></h3>
+      <p class="lead">Multiple sessions that talk to each other both ways. The most powerful and the least mature.</p>
+      <p>A team has a lead plus teammates with a shared <strong>mailbox</strong> for bidirectional peer-to-peer messaging. The lead orchestrates via primitives like <code class="inl">TeamCreate</code>, <code class="inl">TaskCreate</code>, <code class="inl">SendMessage</code>, <code class="inl">TaskList</code>.</p>
+      <div class="term">
+        <div class="term-bar"><i></i><i></i><i></i><span class="ttl">enable (research preview)</span><button class="copy" data-copy="export CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1">copy</button></div>
+        <pre><span class="pr">$</span> export CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1
+<span class="cm"># requires Claude Code v2.1.32+ and Opus 4.6+</span>
+<span class="cm"># teammates inherit the lead's permission mode</span></pre>
+      </div>
+      <div class="callout danger"><span class="ch">Cost &amp; caveats &mdash; read before you reach for this</span><p>Agent teams run at roughly <strong>15&times;</strong> a normal session&rsquo;s token usage, and are a flagged <strong>research preview</strong>. Known limits: in-process teammates can&rsquo;t be resumed (<code class="inl">/resume</code> won&rsquo;t restore them), task status can lag and stall dependents, shutdown is slow, you can run <strong>one team at a time with no nesting</strong>, and open bugs have team tools leaking into standalone subagents. Use it when coordination is the actual requirement &mdash; not because &ldquo;more agents&rdquo; sounds faster.</p></div>
+    </div>
+
+    <!-- 7.4 -->
+    <div class="lesson" data-lesson>
+      <button class="done-toggle" aria-pressed="false"><span class="box"></span> mark done</button>
+      <h3>7.4 · Git worktrees &mdash; filesystem isolation</h3>
+      <p class="lead">Not an agent mechanism at all. A git feature that lets multiple sessions work without stepping on each other&rsquo;s files.</p>
+      <div class="term">
+        <div class="term-bar"><i></i><i></i><i></i><span class="ttl">parallel work, isolated checkouts</span><button class="copy" data-copy="claude --worktree backend">copy</button></div>
+        <pre><span class="pr">$</span> claude <span class="key">--worktree</span> backend   <span class="cm"># isolated checkout: .claude/worktrees/backend/</span>
+<span class="cm"># branch: worktree-backend · shares git history, isolates working dir</span>
+
+<span class="cm"># .worktreeinclude (gitignore syntax) copies .env etc into each new worktree</span></pre>
+      </div>
+      <ul>
+        <li>Each worktree is a separate working directory on its own branch &mdash; run a Claude session in each, no file collisions.</li>
+        <li>The <strong>desktop app auto-creates a worktree per session</strong>; you can also enter one mid-session.</li>
+        <li><strong>No communication</strong> between them by design &mdash; you integrate by <strong>merging branches</strong> at the end (resolving conflicts as usual).</li>
+        <li><strong>Cleanup:</strong> background/subagent worktrees are swept after <code class="inl">cleanupPeriodDays</code> if clean; <code class="inl">--worktree</code> ones are never auto-removed &mdash; <code class="inl">git worktree remove</code> them yourself.</li>
+      </ul>
+    </div>
+
+    <!-- 7.5 -->
+    <div class="lesson" data-lesson>
+      <button class="done-toggle" aria-pressed="false"><span class="box"></span> mark done</button>
+      <h3>7.5 · Choosing &mdash; the framework</h3>
+      <p class="lead">Answer one question and the choice usually falls out.</p>
+      <ul>
+        <li>Keeping <strong>heavy/noisy context out of your main window</strong>, within one task? → <strong>subagent</strong>.</li>
+        <li><strong>Independent parallel tasks that touch files</strong> and merge later? → <strong>worktrees</strong>.</li>
+        <li>Workers that must <strong>coordinate with each other mid-flight</strong>? → <strong>agent teams</strong> (and accept experimental + ~15&times;).</li>
+        <li>Just want <strong>reusable instructions</strong>? → you don&rsquo;t need parallelism at all &mdash; that&rsquo;s a <strong>skill</strong> (Module 04).</li>
+      </ul>
+      <div class="callout note"><span class="ch">They compose</span><p>The common production pattern is <strong>worktrees + subagents</strong>: a session per feature in its own worktree, each using subagents for exploration so its main window stays clean. Teams are the rare third layer, added only when the features genuinely can&rsquo;t be developed in isolation.</p></div>
+    </div>
+
+    <!-- 7.6 -->
+    <div class="lesson" data-lesson>
+      <button class="done-toggle" aria-pressed="false"><span class="box"></span> mark done</button>
+      <h3>7.6 · The hidden cost: you become the bottleneck</h3>
+      <p class="lead">Parallelism multiplies tokens &mdash; and it multiplies the thing tokens can&rsquo;t buy: your attention.</p>
+      <p>Three subagents or a five-Claude team produce three-to-five times the output you then have to <em>review</em>. The constraint stops being compute and becomes you, reading diffs. That&rsquo;s why the honest default for most work is still <strong>one Claude with good context hygiene (Module 03) and solid hooks (Module 06)</strong>. Reach for parallelism when the work is genuinely independent or genuinely needs isolation &mdash; never for its own sake.</p>
+      <div class="callout gotcha"><span class="ch">Bridge to Module 08</span><p>&ldquo;You-as-the-bottleneck&rdquo; is one of the named scaling challenges of agentic engineering. The fix isn&rsquo;t more agents &mdash; it&rsquo;s better <em>validation</em> (so you trust the output without reading every line) and compounding your setup so each task gets cheaper. That&rsquo;s the finale.</p></div>
+    </div>
+
+    <!-- Try it -->
+    <div class="lesson" data-lesson>
+      <button class="done-toggle" aria-pressed="false"><span class="box"></span> mark done</button>
+      <h3>Try it yourself</h3>
+      <p class="lead">Tick as you go &mdash; these feed your meter.</p>
+      <ul class="tasks" id="tasks">
+        <li data-task><span class="tick"></span><span class="tk">Use the built-in <code class="inl">Explore</code> subagent to map an unfamiliar repo<small>watch the noisy search stay out of your main window</small></span></li>
+        <li data-task><span class="tick"></span><span class="tk">Write a custom subagent in <code class="inl">.claude/agents/</code> with a tight tool allowlist<small>set a cheaper model for a search-only agent</small></span></li>
+        <li data-task><span class="tick"></span><span class="tk">Spin up two worktrees and build independent changes in parallel<small><code class="inl">claude --worktree a</code> / <code class="inl">--worktree b</code></small></span></li>
+        <li data-task><span class="tick"></span><span class="tk">Merge the worktree branches and resolve any conflict<small>this is the integration step teams skip</small></span></li>
+        <li data-task><span class="tick"></span><span class="tk">Read the agent-teams docs and note the version + flag requirements<small>before spending 15× on a preview feature</small></span></li>
+      </ul>
+    </div>
+
+    <!-- Quiz -->
+    <div class="quiz" data-lesson>
+      <span class="qh">Knowledge check · 07</span>
+      <div class="q">You want backend, frontend, and tests built <em>simultaneously</em> &mdash; each touching different files, no cross-talk needed mid-flight, merged when done. Which mechanism?</div>
+      <button class="opt" data-correct="false"><span class="lt">A</span><span>Agent teams &mdash; three workers means you need a team.</span></button>
+      <button class="opt" data-correct="true"><span class="lt">B</span><span>Git worktrees &mdash; independent parallel work with file isolation, merged at the end. No coordination cost.</span></button>
+      <button class="opt" data-correct="false"><span class="lt">C</span><span>Subagents &mdash; spawn three and let them each own a layer.</span></button>
+      <button class="opt" data-correct="false"><span class="lt">D</span><span>One session, switching between the three layers as you go.</span></button>
+      <div class="verdict" id="v1"></div>
+    </div>
+
+  </div>
+</section>
+
+<section class="next">
+  <div class="wrap">
+    <h2>Module 08 is next: Agentic Engineering</h2>
+    <p>The finale ties it together: the Five Pillars framing, the scaling challenges (including the bottleneck you just met), compound engineering, auditing a codebase for AI-readiness, and plugins for sharing your whole setup in one install.</p>
+  </div>
+</section>
+
+<nav class="pager">
+  <a class="pg prev" href="06-hooks.html"><small>previous</small>← 06 · Hooks</a>
+  <a class="pg next" href="08-agentic-engineering.html"><small>next module</small>08 · Agentic Engineering →</a>
+</nav>
+
+<footer class="wrap">
+  <span>OPERATOR&rsquo;S PATH · CHUNK 07</span><span>·</span>
+  <span>verified against code.claude.com/docs</span><span>·</span>
+  <span>Claude Code 2.1.x · June 2026</span>
+</footer>
+
+<div class="float-prog" id="float" hidden>
+  <div class="ring">
+    <svg width="34" height="34"><circle cx="17" cy="17" r="14" fill="none" stroke="rgba(255,255,255,.18)" stroke-width="4"/><circle id="ring" cx="17" cy="17" r="14" fill="none" stroke="#C96442" stroke-width="4" stroke-linecap="round" stroke-dasharray="88" stroke-dashoffset="88"/></svg>
+    <span class="pct" id="ringpct">0</span>
+  </div>
+  <span id="floatlabel">getting started</span>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  // ---- topology visualizer ----
+  var mech = {
+    subagents: { props:[
+      ["Sessions","One — all inside your current session"],
+      ["Communication","One-way · workers report back to the lead"],
+      ["Isolation","Separate context window per subagent"],
+      ["Nesting","Cannot spawn their own subagents"],
+      ["Cost","~4–7× tokens"],
+      ["Status","Stable","stable"],
+      ["Config",".claude/agents/ · markdown + YAML"],
+      ["Best for","Parallel exploration; keeping noisy work out of main context"]
+    ]},
+    teams: { props:[
+      ["Sessions","Many — separate coordinated sessions"],
+      ["Communication","Bidirectional · peer-to-peer mailbox"],
+      ["Isolation","Separate sessions"],
+      ["Nesting","One team at a time · no nested teams"],
+      ["Cost","~15× tokens"],
+      ["Status","Experimental · flag + v2.1.32+ + Opus 4.6+","exp"],
+      ["Config","CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1"],
+      ["Best for","Workers that must coordinate with each other mid-task"]
+    ]},
+    worktrees: { props:[
+      ["Sessions","Many — independent parallel sessions"],
+      ["Communication","None · you merge branches at the end"],
+      ["Isolation","Filesystem · separate working directories"],
+      ["Nesting","n/a"],
+      ["Cost","Linear · just more sessions"],
+      ["Status","Stable","stable"],
+      ["Config","claude --worktree <name>"],
+      ["Best for","Independent features that touch files, merged later"]
+    ]}
+  };
+  var sel = document.getElementById("toposel");
+  var propsEl = document.getElementById("props");
+  var svgs = {subagents:document.getElementById("svg-subagents"), teams:document.getElementById("svg-teams"), worktrees:document.getElementById("svg-worktrees")};
+
+  function select(k){
+    Array.prototype.forEach.call(sel.children, function(b){ b.classList.toggle("active", b.dataset.k===k); });
+    for(var key in svgs){ svgs[key].classList.toggle("show", key===k); }
+    propsEl.innerHTML = mech[k].props.map(function(p){
+      var cls = p[2] ? (" "+p[2]) : "";
+      return '<div class="prop"><div class="pk">'+p[0]+'</div><div class="pv'+cls+'">'+p[1]+'</div></div>';
+    }).join("");
+  }
+  Array.prototype.forEach.call(sel.children, function(b){
+    b.addEventListener("click", function(){ select(b.dataset.k); });
+  });
+  select("subagents");
+
+  // ---- progress engine ----
+  var toggles = Array.prototype.slice.call(document.querySelectorAll(".done-toggle"));
+  var tasks = Array.prototype.slice.call(document.querySelectorAll("#tasks li"));
+  var totalUnits = toggles.length + tasks.length + 1;
+  var quizDone = false;
+  function tally(){
+    var done=0;
+    toggles.forEach(function(t){ if(t.classList.contains("done")) done++; });
+    tasks.forEach(function(t){ if(t.classList.contains("done")) done++; });
+    if(quizDone) done++;
+    var pct = Math.round(done/totalUnits*100);
+    document.getElementById("bar").style.width = pct+"%";
+    document.getElementById("metaProg").textContent = "MODULE 07 / 08 · "+pct+"% complete";
+    document.getElementById("ring").style.strokeDashoffset = 88-(88*pct/100);
+    document.getElementById("ringpct").textContent = pct;
+    var f=document.getElementById("float"); f.hidden=(pct===0);
+    var label=document.getElementById("floatlabel");
+    if(pct===0) label.textContent="getting started";
+    else if(pct<50) label.textContent="warming up";
+    else if(pct<100) label.textContent="most of the way";
+    else { label.textContent="module clear — go to 08"; f.style.background="#2E6E5B"; }
+  }
+  toggles.forEach(function(t){
+    t.addEventListener("click", function(){
+      var on=t.classList.toggle("done"); t.setAttribute("aria-pressed",on);
+      t.lastChild.textContent = on ? " done" : " mark done"; tally();
+    });
+  });
+  tasks.forEach(function(li){ li.addEventListener("click", function(){ li.classList.toggle("done"); tally(); }); });
+
+  document.querySelectorAll(".copy").forEach(function(btn){
+    btn.addEventListener("click", function(){
+      var txt=btn.getAttribute("data-copy");
+      navigator.clipboard && navigator.clipboard.writeText(txt).then(function(){
+        var o=btn.textContent; btn.textContent="copied ✓"; setTimeout(function(){ btn.textContent=o; },1300);
+      });
+    });
+  });
+
+  var opts = Array.prototype.slice.call(document.querySelectorAll(".opt"));
+  var verdict = document.getElementById("v1");
+  opts.forEach(function(o){
+    o.addEventListener("click", function(){
+      if(quizDone) return;
+      var right = o.getAttribute("data-correct")==="true";
+      opts.forEach(function(x){ x.disabled=true; if(x.getAttribute("data-correct")==="true") x.classList.add("correct"); });
+      if(!right) o.classList.add("wrong");
+      verdict.className="verdict show "+(right?"right":"nope");
+      verdict.innerHTML = right
+        ? "<b>Right.</b> Independent work + file isolation + merge-at-the-end is the textbook worktree case. No mid-flight coordination is needed, so agent teams (A) would be 15× the cost for nothing, and their experimental instability for no benefit. Subagents (C) live in one session and report one-way — wrong shape for three parallel feature branches."
+        : "<b>Not the best fit.</b> The tells are &lsquo;different files,&rsquo; &lsquo;no cross-talk,&rsquo; and &lsquo;merged when done&rsquo; — that&rsquo;s filesystem isolation with a merge step, i.e. worktrees. Teams (A) add bidirectional coordination you explicitly don&rsquo;t need (at ~15× cost, experimental). Subagents (C) are one session reporting one-way. D throws away the parallelism entirely.";
+      quizDone=true; tally();
+    });
+  });
+
+  tally();
+})();
+</script>
+<script>
+(function(){
+  var t=document.querySelector('.navtoggle'),
+      s=document.querySelector('.sidenav'),
+      c=document.querySelector('.navscrim');
+  if(!t||!s) return;
+  function close(){s.classList.remove('open'); if(c)c.classList.remove('open');}
+  t.addEventListener('click',function(){
+    var o=s.classList.toggle('open'); if(c)c.classList.toggle('open',o);
+  });
+  if(c)c.addEventListener('click',close);
+  s.addEventListener('click',function(e){ if(e.target.closest('a')) close(); });
+  document.addEventListener('keydown',function(e){ if(e.key==='Escape') close(); });
+})();
+</script>
+
+</body>
+</html>

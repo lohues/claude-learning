@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Operator's Path · 05 MCP &amp; the Outside World</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F2EEE6; --paper-2:#E8E1D4; --panel:#FBF9F4;
+    --ink:#1B1915; --slate:#6E665A; --slate-2:#928979;
+    --clay:#C96442; --clay-deep:#A84E30; --clay-soft:#F0D9CE;
+    --signal:#2E6E5B; --signal-soft:#D6E6DF;
+    --amber:#C98A1F; --amber-soft:#F2E3C4;
+    --deny:#A23C3C; --deny-soft:#EFD7D3;
+    --term-bg:#16140F; --term-fg:#ECE6D8; --term-dim:#8E8674;
+    --line:#D8D0C0; --line-strong:#C4BAA6;
+    --display:"Bricolage Grotesque",serif;
+    --body:"IBM Plex Sans",sans-serif;
+    --mono:"JetBrains Mono",monospace;
+    --r:14px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0; background:var(--paper); color:var(--ink); font-family:var(--body); font-size:17px; line-height:1.62; -webkit-font-smoothing:antialiased}
+  ::selection{background:var(--clay-soft)}
+  a{color:var(--clay-deep)}
+  .wrap{max-width:1180px; margin:0 auto; padding:0 24px}
+
+  .topbar{position:sticky; top:0; z-index:50; background:rgba(242,238,230,.86); backdrop-filter:blur(10px); border-bottom:1px solid var(--line)}
+  .topbar-in{display:flex; align-items:center; gap:18px; height:60px}
+  a.brand{font-family:var(--mono); font-weight:700; font-size:14px; letter-spacing:.04em; display:flex; align-items:center; gap:9px; text-decoration:none; color:inherit}
+  .brand .dot{width:11px; height:11px; border-radius:50%; background:var(--clay); box-shadow:0 0 0 3px var(--clay-soft)}
+  .topbar .meta{margin-left:auto; font-family:var(--mono); font-size:12px; color:var(--slate); letter-spacing:.03em}
+  .pbar{height:3px; background:var(--paper-2)}
+  .pbar > i{display:block; height:100%; width:0; background:linear-gradient(90deg,var(--clay),var(--clay-deep)); transition:width .5s cubic-bezier(.4,0,.2,1)}
+
+  /* ---------- sidebar nav ---------- */
+  .navtoggle{display:inline-flex; align-items:center; justify-content:center; width:38px; height:38px; border:1px solid var(--line); border-radius:10px; background:var(--paper); color:var(--ink); cursor:pointer; padding:0; flex:0 0 auto}
+  .navtoggle span{display:block; width:17px; height:2px; background:currentColor; border-radius:2px; position:relative}
+  .navtoggle span::before,.navtoggle span::after{content:""; position:absolute; left:0; width:17px; height:2px; background:currentColor; border-radius:2px}
+  .navtoggle span::before{top:-5px} .navtoggle span::after{top:5px}
+  .sidenav{position:fixed; top:0; left:0; bottom:0; width:250px; z-index:70; background:var(--panel); border-right:1px solid var(--line); display:flex; flex-direction:column; padding:18px 14px; overflow-y:auto; transform:translateX(-100%); transition:transform .25s ease}
+  .sidenav.open{transform:none}
+  .sidehead{display:flex; align-items:center; gap:9px; font-family:var(--mono); font-weight:700; font-size:13px; letter-spacing:.04em; text-decoration:none; color:inherit; padding:4px 8px 14px; border-bottom:1px solid var(--line); margin-bottom:12px}
+  .sidehead .dot{width:11px; height:11px; border-radius:50%; background:var(--clay); box-shadow:0 0 0 3px var(--clay-soft); flex:0 0 auto}
+  .sidenav-list{display:flex; flex-direction:column; gap:4px}
+  .mp{display:flex; align-items:center; gap:10px; text-decoration:none; padding:9px 12px; border-radius:10px; border:1px solid transparent; background:transparent; color:var(--slate); font-family:var(--mono); font-size:12.5px; white-space:nowrap; transition:.15s}
+  .mp:hover{background:var(--paper); color:var(--ink)}
+  .mp .mpn{font-weight:700; flex:0 0 auto; width:22px; text-align:center}
+  .mp .mpl{font-size:12px}
+  .mp.current{background:var(--clay-soft); border-color:var(--clay); color:var(--clay-deep)}
+  .mp.off{opacity:.42; pointer-events:none}
+  .mp.home .mpn{color:var(--clay)}
+  .navscrim{position:fixed; inset:0; background:rgba(20,18,14,.42); z-index:65; opacity:0; pointer-events:none; transition:opacity .25s}
+  .navscrim.open{opacity:1; pointer-events:auto}
+  @media(min-width:1100px){
+    .sidenav{transform:none}
+    body{padding-left:250px}
+    .navtoggle{display:none}
+    .navscrim{display:none}
+  }
+
+  .hero{padding:58px 0 16px}
+  .eyebrow{font-family:var(--mono); font-size:12.5px; letter-spacing:.18em; text-transform:uppercase; color:var(--clay-deep); font-weight:500}
+  .hero h1{font-family:var(--display); font-weight:800; line-height:1.03; font-size:clamp(38px,6.2vw,66px); letter-spacing:-.02em; margin:14px 0 0}
+  .hero h1 .thin{font-weight:400; color:var(--slate)}
+  .hero p.lede{font-size:20px; color:var(--slate); max-width:60ch; margin:18px 0 0}
+
+  /* ---------- decision engine (signature) ---------- */
+  .decider{background:var(--panel); border:1px solid var(--line-strong); border-radius:20px; padding:24px 26px 26px; margin:36px 0 6px; box-shadow:0 20px 50px -34px rgba(0,0,0,.4)}
+  .dlabel{font-family:var(--mono); font-size:12px; letter-spacing:.1em; text-transform:uppercase; color:var(--slate); margin-bottom:6px; display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap}
+  .dtax{font-family:var(--mono); font-size:12px; color:var(--clay-deep)}
+  .dq{margin-top:14px; transition:.3s}
+  .dq.hidden{display:none}
+  .dq .qt{font-family:var(--display); font-weight:600; font-size:17px; margin-bottom:9px}
+  .dq .qt b{color:var(--clay-deep); font-family:var(--mono); font-size:13px; margin-right:8px}
+  .dopts{display:flex; gap:8px; flex-wrap:wrap}
+  .dopt{font:inherit; font-family:var(--mono); font-size:12.5px; cursor:pointer; border:1px solid var(--line-strong); background:var(--paper); color:var(--ink); border-radius:9px; padding:10px 14px; transition:.15s}
+  .dopt:hover{border-color:var(--clay)}
+  .dopt.sel{background:var(--clay-soft); border-color:var(--clay); color:var(--clay-deep); font-weight:700}
+  .dverdict{margin-top:20px; border-radius:14px; padding:18px 20px; display:none; border:1px solid}
+  .dverdict.show{display:block}
+  .dverdict.go{background:var(--signal-soft); border-color:#A9CEC1}
+  .dverdict.caution{background:var(--amber-soft); border-color:#E0C079}
+  .dverdict.cli{background:var(--paper-2); border-color:var(--line-strong)}
+  .dverdict .rec{font-family:var(--display); font-weight:800; font-size:24px; letter-spacing:-.01em; margin:0 0 6px}
+  .dverdict.go .rec{color:var(--signal)} .dverdict.caution .rec{color:var(--amber)} .dverdict.cli .rec{color:var(--ink)}
+  .dverdict p{margin:8px 0 0; font-size:15px}
+  .dverdict .mit{font-family:var(--mono); font-size:12.5px; margin-top:12px; padding:10px 13px; background:rgba(255,255,255,.5); border-radius:9px; color:var(--ink)}
+  .dverdict .trust{margin-top:10px; padding:10px 13px; border-radius:9px; background:var(--deny-soft); color:var(--deny); font-size:13.5px; display:none}
+  .dverdict .trust.show{display:block}
+  .dctl{margin-top:16px}
+  .dbtn{font:inherit; font-family:var(--mono); font-size:12.5px; cursor:pointer; border-radius:9px; padding:9px 14px; border:1px solid var(--line-strong); background:var(--paper); color:var(--slate); transition:.15s}
+  .dbtn:hover{border-color:var(--clay); color:var(--ink)}
+
+  section.block{padding:52px 0; border-top:1px solid var(--line)}
+  .sec-head{display:flex; align-items:baseline; gap:16px; margin-bottom:6px}
+  .sec-num{font-family:var(--mono); font-size:13px; color:var(--clay-deep); font-weight:700; letter-spacing:.05em}
+  .sec-head h2{font-family:var(--display); font-weight:800; font-size:clamp(26px,4vw,38px); letter-spacing:-.01em; margin:0}
+  .sec-sub{color:var(--slate); max-width:62ch; margin:10px 0 28px; font-size:17px}
+  .module-intro{display:flex; flex-wrap:wrap; gap:10px; margin-bottom:8px}
+  .chip{font-family:var(--mono); font-size:12px; padding:5px 11px; border-radius:99px; border:1px solid var(--line-strong); color:var(--slate); background:var(--panel)}
+  .chip.live{color:var(--signal); border-color:var(--signal); background:var(--signal-soft)}
+  .chip.beta{color:var(--amber); border-color:var(--amber); background:var(--amber-soft)}
+
+  .lesson{background:var(--panel); border:1px solid var(--line); border-radius:var(--r); padding:26px 28px; margin:18px 0; position:relative}
+  .lesson h3{font-family:var(--display); font-weight:800; font-size:23px; letter-spacing:-.01em; margin:0 0 4px; padding-right:120px}
+  .lesson .lead{color:var(--slate); margin:0 0 16px; font-size:16px}
+  .lesson p{margin:14px 0}
+  .lesson ul{margin:14px 0; padding-left:0; list-style:none}
+  .lesson ul li{position:relative; padding-left:26px; margin:9px 0}
+  .lesson ul li::before{content:"›"; position:absolute; left:6px; top:-1px; color:var(--clay); font-weight:700; font-family:var(--mono)}
+  .lesson strong{font-weight:600}
+  code.inl{font-family:var(--mono); font-size:.86em; background:var(--paper-2); padding:2px 6px; border-radius:5px; color:var(--clay-deep)}
+
+  .table{border:1px solid var(--line); border-radius:12px; overflow:hidden; margin:18px 0}
+  .table .tr{display:grid; grid-template-columns:130px 1fr; border-top:1px solid var(--line)}
+  .table .tr:first-child{border-top:none; background:var(--paper-2)}
+  .table .tr > div{padding:11px 15px}
+  .table .tr > div:first-child{font-family:var(--mono); font-size:13px; color:var(--clay-deep); border-right:1px solid var(--line)}
+  .table .tr:first-child > div{font-family:var(--mono); font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--slate); font-weight:700}
+  .table .tr > div:last-child{font-size:14.5px}
+  @media(max-width:560px){.table .tr{grid-template-columns:100px 1fr}}
+
+  .done-toggle{position:absolute; top:24px; right:26px; font:inherit; font-family:var(--mono); font-size:12px; letter-spacing:.03em; padding:7px 13px; border-radius:99px; border:1px solid var(--line-strong); background:var(--paper); color:var(--slate); cursor:pointer; transition:.2s; display:flex; gap:7px; align-items:center}
+  .done-toggle:hover{border-color:var(--clay)}
+  .done-toggle .box{width:13px; height:13px; border-radius:4px; border:1.5px solid var(--slate-2); display:grid; place-items:center}
+  .done-toggle.done{background:var(--signal-soft); border-color:var(--signal); color:var(--signal)}
+  .done-toggle.done .box{background:var(--signal); border-color:var(--signal)}
+  .done-toggle.done .box::after{content:"✓"; color:#fff; font-size:10px; line-height:1}
+  @media(max-width:620px){.done-toggle{position:static; margin-bottom:14px} .lesson h3{padding-right:0}}
+
+  .term{background:var(--term-bg); border-radius:12px; overflow:hidden; margin:18px 0; box-shadow:0 14px 40px -22px rgba(0,0,0,.55)}
+  .term-bar{display:flex; align-items:center; gap:7px; padding:11px 15px; background:#211E17; border-bottom:1px solid #2c2820}
+  .term-bar i{width:11px; height:11px; border-radius:50%; background:#3a352b; display:block}
+  .term-bar i:nth-child(1){background:#C96442}
+  .term-bar .ttl{margin-left:8px; font-family:var(--mono); font-size:11.5px; color:var(--term-dim); letter-spacing:.03em}
+  .term-bar .copy{margin-left:auto; font-family:var(--mono); font-size:11px; color:var(--term-dim); background:none; border:1px solid #322d24; border-radius:6px; padding:4px 9px; cursor:pointer; transition:.15s}
+  .term-bar .copy:hover{color:var(--term-fg); border-color:#4a4438}
+  .term pre{margin:0; padding:18px; overflow-x:auto; font-family:var(--mono); font-size:13px; line-height:1.7; color:var(--term-fg)}
+  .term .pr{color:var(--clay)} .term .cm{color:var(--term-dim)} .term .ok{color:#7FB59E} .term .em{color:#E3B23C} .term .key{color:#9FB6D8} .term .str{color:#C9A876}
+
+  .callout{border-radius:12px; padding:16px 18px; margin:18px 0; border:1px solid; font-size:15.5px}
+  .callout .ch{font-family:var(--mono); font-size:11.5px; letter-spacing:.1em; text-transform:uppercase; font-weight:700; display:block; margin-bottom:5px}
+  .callout p{margin:6px 0 0}
+  .callout.gotcha{background:var(--amber-soft); border-color:#E0C079} .callout.gotcha .ch{color:var(--amber)}
+  .callout.note{background:var(--signal-soft); border-color:#A9CEC1} .callout.note .ch{color:var(--signal)}
+  .callout.danger{background:var(--deny-soft); border-color:#D8A39C} .callout.danger .ch{color:var(--deny)}
+
+  details.deep{border:1px solid var(--line); border-radius:12px; margin:16px 0; background:var(--panel); overflow:hidden}
+  details.deep summary{cursor:pointer; padding:15px 18px; font-family:var(--mono); font-size:13px; font-weight:500; letter-spacing:.02em; color:var(--clay-deep); list-style:none; display:flex; align-items:center; gap:9px}
+  details.deep summary::-webkit-details-marker{display:none}
+  details.deep summary .pl{transition:.2s; font-weight:700}
+  details.deep[open] summary .pl{transform:rotate(45deg)}
+  details.deep .inside{padding:0 18px 18px; border-top:1px solid var(--line)}
+  details.deep .inside p:first-child{margin-top:14px}
+
+  .tasks{list-style:none; padding:0; margin:16px 0}
+  .tasks li{display:flex; gap:13px; align-items:flex-start; padding:13px 15px; border:1px solid var(--line); border-radius:10px; margin:8px 0; background:var(--panel); cursor:pointer; transition:.15s}
+  .tasks li:hover{border-color:var(--line-strong)}
+  .tasks li .tick{width:22px; height:22px; border-radius:7px; border:2px solid var(--slate-2); flex:0 0 auto; margin-top:1px; display:grid; place-items:center; transition:.2s}
+  .tasks li.done{background:var(--signal-soft); border-color:#A9CEC1}
+  .tasks li.done .tick{background:var(--signal); border-color:var(--signal)}
+  .tasks li.done .tick::after{content:"✓"; color:#fff; font-size:13px}
+  .tasks li.done .tk{text-decoration:line-through; color:var(--slate)}
+  .tasks li .tk{font-size:15.5px}
+  .tasks li .tk small{display:block; font-family:var(--mono); font-size:12px; color:var(--slate); margin-top:2px; text-decoration:none}
+
+  .quiz{background:linear-gradient(180deg,var(--panel),var(--paper)); border:1px solid var(--line-strong); border-radius:var(--r); padding:26px 28px; margin:24px 0}
+  .quiz .qh{font-family:var(--mono); font-size:12px; letter-spacing:.12em; text-transform:uppercase; color:var(--clay-deep); font-weight:700}
+  .quiz .q{font-family:var(--display); font-weight:600; font-size:20px; margin:8px 0 16px}
+  .opt{display:block; width:100%; text-align:left; font:inherit; font-size:15.5px; background:var(--paper); border:1px solid var(--line-strong); border-radius:10px; padding:13px 16px; margin:9px 0; cursor:pointer; transition:.15s; display:flex; gap:11px; align-items:center}
+  .opt:hover{border-color:var(--clay)}
+  .opt .lt{font-family:var(--mono); font-weight:700; color:var(--slate); width:18px; flex:0 0 auto}
+  .opt.correct{background:var(--signal-soft); border-color:var(--signal); color:var(--signal)} .opt.correct .lt{color:var(--signal)}
+  .opt.wrong{background:var(--deny-soft); border-color:var(--deny); color:var(--deny)} .opt.wrong .lt{color:var(--deny)}
+  .opt:disabled{cursor:default}
+  .verdict{margin-top:14px; font-size:15px; padding:13px 16px; border-radius:10px; display:none}
+  .verdict.show{display:block}
+  .verdict.right{background:var(--signal-soft); color:var(--signal)}
+  .verdict.nope{background:var(--amber-soft); color:var(--amber)}
+
+  .pager{display:flex; justify-content:space-between; gap:12px; padding:30px 24px 0; max-width:1180px; margin:0 auto}
+  .pg{text-decoration:none; font-family:var(--mono); font-size:13px; color:var(--clay-deep); border:1px solid var(--line-strong); border-radius:11px; padding:12px 17px; background:var(--panel); transition:.15s; max-width:48%}
+  .pg:hover{border-color:var(--clay)}
+  .pg small{display:block; font-size:10.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--slate-2); margin-bottom:2px}
+  .pg.next{text-align:right; margin-left:auto}
+  .pg.ghost{opacity:.45; pointer-events:none}
+
+  .next{border-top:1px solid var(--line); padding:48px 0 30px; text-align:center}
+  .next h2{font-family:var(--display); font-weight:800; font-size:30px; margin:0 0 8px}
+  .next p{color:var(--slate); max-width:54ch; margin:0 auto 22px}
+  .next .cmd{font-family:var(--mono); font-size:14px; background:var(--term-bg); color:var(--term-fg); display:inline-block; padding:13px 20px; border-radius:10px}
+  .next .cmd b{color:var(--clay)}
+
+  footer{border-top:1px solid var(--line); padding:26px 0 60px; font-family:var(--mono); font-size:12px; color:var(--slate-2); display:flex; flex-wrap:wrap; gap:8px 18px}
+
+  .float-prog{position:fixed; right:18px; bottom:18px; z-index:60; background:var(--ink); color:var(--paper); border-radius:14px; padding:13px 16px; font-family:var(--mono); font-size:12px; box-shadow:0 16px 40px -16px rgba(0,0,0,.5); display:flex; align-items:center; gap:11px}
+  .float-prog .ring{position:relative; width:34px; height:34px}
+  .float-prog svg{transform:rotate(-90deg)}
+  .float-prog .pct{position:absolute; inset:0; display:grid; place-items:center; font-weight:700; font-size:11px}
+  @media(max-width:520px){.float-prog{left:18px; right:18px; justify-content:center}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="wrap topbar-in">
+    <button class="navtoggle" aria-label="Toggle module menu" aria-controls="sidenav"><span></span></button>
+    <a class="brand" href="index.html"><span class="dot"></span> OPERATOR&rsquo;S&nbsp;PATH</a>
+    <div class="meta" id="metaProg">MODULE 05 / 08 · 0% complete</div>
+  </div>
+  <div class="pbar"><i id="bar"></i></div>
+</div>
+<aside class="sidenav" id="sidenav" aria-label="All modules">
+  <a class="sidehead" href="index.html"><span class="dot"></span> OPERATOR&rsquo;S&nbsp;PATH</a>
+  <nav class="sidenav-list">
+    <a class="mp home" href="index.html"><span class="mpn">&#9733;</span><span class="mpl">Path</span></a>
+    <a class="mp" href="01-ground-control.html"><span class="mpn">01</span><span class="mpl">Ground Control</span></a>
+    <a class="mp" href="02-trust-and-permissions.html"><span class="mpn">02</span><span class="mpl">Permissions</span></a>
+    <a class="mp" href="03-context-engineering.html"><span class="mpn">03</span><span class="mpl">Context</span></a>
+    <a class="mp" href="04-skills.html"><span class="mpn">04</span><span class="mpl">Skills</span></a>
+    <a class="mp current" href="05-mcp.html"><span class="mpn">05</span><span class="mpl">MCP</span></a>
+    <a class="mp" href="06-hooks.html"><span class="mpn">06</span><span class="mpl">Hooks</span></a>
+    <a class="mp" href="07-parallel.html"><span class="mpn">07</span><span class="mpl">Parallel</span></a>
+    <a class="mp" href="08-agentic-engineering.html"><span class="mpn">08</span><span class="mpl">Agentic Eng.</span></a>
+  </nav>
+</aside>
+<div class="navscrim" aria-hidden="true"></div>
+
+<header class="hero">
+  <div class="wrap">
+    <span class="eyebrow">Module 05 · power with a standing tax</span>
+    <h1>Connecting the outside world &mdash;<br><span class="thin">and knowing when not to.</span></h1>
+    <p class="lede">MCP lets Claude reach GitHub, databases, browsers, design tools. It&rsquo;s genuinely powerful. It also taxes the context window you just spent Module 03 learning to protect &mdash; <em>every turn, whether you use the server or not</em>. So the core skill here isn&rsquo;t connecting. It&rsquo;s deciding.</p>
+
+    <div class="decider" id="decider">
+      <div class="dlabel"><span>&ldquo;Should I connect this?&rdquo; &mdash; answer three</span><span class="dtax" id="dtax">est. always-on cost: &mdash;</span></div>
+
+      <div class="dq" id="dq1" data-q="freq">
+        <div class="qt"><b>Q1</b>How often will you use this integration?</div>
+        <div class="dopts">
+          <button class="dopt" data-v="session">Constantly · every session</button>
+          <button class="dopt" data-v="occasional">Occasionally</button>
+          <button class="dopt" data-v="oneoff">Once or twice</button>
+        </div>
+      </div>
+
+      <div class="dq hidden" id="dq2" data-q="tools">
+        <div class="qt"><b>Q2</b>How many tools does the server expose?</div>
+        <div class="dopts">
+          <button class="dopt" data-v="few">A handful (&lt;10)</button>
+          <button class="dopt" data-v="dozens">Dozens (10&ndash;50)</button>
+          <button class="dopt" data-v="tons">Tons (50+)</button>
+        </div>
+      </div>
+
+      <div class="dq hidden" id="dq3" data-q="trust">
+        <div class="qt"><b>Q3</b>Where&rsquo;s the server from?</div>
+        <div class="dopts">
+          <button class="dopt" data-v="official">Official / first-party</button>
+          <button class="dopt" data-v="third">Third-party / community</button>
+        </div>
+      </div>
+
+      <div class="dverdict" id="dv">
+        <div class="rec" id="dvrec"></div>
+        <p id="dvreason"></p>
+        <div class="mit" id="dvmit"></div>
+        <div class="trust" id="dvtrust"></div>
+      </div>
+
+      <div class="dctl"><button class="dbtn" id="dreset">reset</button></div>
+    </div>
+  </div>
+</header>
+
+<section class="block" id="m5">
+  <div class="wrap">
+    <div class="sec-head"><span class="sec-num">MODULE 05</span><h2>MCP &amp; the Outside World</h2></div>
+    <div class="module-intro">
+      <span class="chip live">● core</span>
+      <span class="chip">~27 min read</span>
+      <span class="chip beta">/chrome is beta</span>
+      <span class="chip">6 lessons · 1 check</span>
+    </div>
+    <p class="sec-sub">What MCP is, how to connect a server (transports &amp; scope), the standing context tax that makes restraint the real skill, when to reach for a CLI instead, the hygiene that keeps it safe, and the browser as a tool via <code class="inl">/chrome</code>.</p>
+
+    <!-- 5.1 -->
+    <div class="lesson" data-lesson>
+      <button class="done-toggle" aria-pressed="false"><span class="box"></span> mark done</button>
+      <h3>5.1 · What MCP is</h3>
+      <p class="lead">The Model Context Protocol: a standard way to plug external systems into Claude as callable tools.</p>
+      <p>Skills (Module 04) gave Claude <em>procedures</em>. MCP gives it <em>reach</em> &mdash; beyond your filesystem to GitHub, Postgres, Slack, Figma, your browser. An MCP <strong>server</strong> exposes a set of <strong>tools</strong> (e.g. &ldquo;create issue,&rdquo; &ldquo;run query&rdquo;); Claude calls them like any other tool. One protocol, many integrations, no bespoke glue per service.</p>
+    </div>
+
+    <!-- 5.2 -->
+    <div class="lesson" data-lesson>
+      <button class="done-toggle" aria-pressed="false"><span class="box"></span> mark done</button>
+      <h3>5.2 · Connecting a server: transports &amp; scope</h3>
+      <p class="lead">One command, two decisions: how it connects (transport) and who sees it (scope).</p>
+      <div class="term">
+        <div class="term-bar"><i></i><i></i><i></i><span class="ttl">claude mcp add</span><button class="copy" data-copy="claude mcp add --transport stdio my-db -- npx -y @modelcontextprotocol/server-postgres postgres://localhost/mydb">copy</button></div>
+        <pre><span class="cm"># flags BEFORE the name; '--' separates the server's own command</span>
+<span class="pr">$</span> claude mcp add <span class="key">--transport</span> stdio my-db <span class="em">--</span> \
+      npx -y @modelcontextprotocol/server-postgres postgres://localhost/mydb
+
+<span class="pr">$</span> claude mcp add <span class="key">--transport</span> http linear https://mcp.linear.app/mcp
+
+<span class="pr">&gt;</span> /mcp        <span class="cm"># live status + run OAuth for servers that need it</span></pre>
+      </div>
+      <p><strong>Transports:</strong></p>
+      <div class="table">
+        <div class="tr"><div>transport</div><div>use</div></div>
+        <div class="tr"><div>stdio</div><div>Local process on your machine. Good for local DBs, filesystem-adjacent tools.</div></div>
+        <div class="tr"><div>http</div><div>Remote server. The current standard for hosted integrations.</div></div>
+        <div class="tr"><div>sse</div><div>Deprecated. If you see it, migrate to http.</div></div>
+      </div>
+      <p><strong>Scope</strong> decides where the config lives and who inherits it: <code class="inl">local</code> (default, <code class="inl">~/.claude.json</code>, just you) · <code class="inl">project</code> (<code class="inl">.mcp.json</code>, committed and shared with the team) · <code class="inl">user</code> (all your projects).</p>
+    </div>
+
+    <!-- 5.3 -->
+    <div class="lesson" data-lesson>
+      <button class="done-toggle" aria-pressed="false"><span class="box"></span> mark done</button>
+      <h3>5.3 · The tax: every server costs, every turn</h3>
+      <p class="lead">This is the lesson that changes how you use MCP. A connected server injects its <em>entire tool schema</em> into context on <strong>every turn</strong> &mdash; used or not.</p>
+      <p>Remember the context gauge from Module 03? MCP tool definitions were the single biggest surprise consumer. Here&rsquo;s why, in real numbers:</p>
+      <ul>
+        <li>Connecting <strong>four servers</strong> can burn <strong>~7,000 tokens before you type a single prompt</strong>.</li>
+        <li>A heavy configuration has been measured at <strong>~66,000 tokens</strong> &mdash; roughly a third of a 200K window &mdash; gone to definitions you may never call.</li>
+        <li>GitHub&rsquo;s official server (94 tools) alone runs about <strong>17,600 tokens per request</strong> just for its tool definitions.</li>
+      </ul>
+      <div class="callout danger"><span class="ch">The reframe</span><p>An idle MCP server isn&rsquo;t free &mdash; it&rsquo;s a <em>standing</em> cost, paid on every turn for the whole session. The question is never &ldquo;could this server be useful?&rdquo; (almost anything could). It&rsquo;s &ldquo;is it useful <em>often enough</em> to justify taxing every turn?&rdquo; That&rsquo;s what the engine up top computes.</p></div>
+    </div>
+
+    <!-- 5.4 -->
+    <div class="lesson" data-lesson>
+      <button class="done-toggle" aria-pressed="false"><span class="box"></span> mark done</button>
+      <h3>5.4 · When NOT to use MCP</h3>
+      <p class="lead">Three situations where connecting is the wrong move.</p>
+      <ul>
+        <li><strong>One-off tasks.</strong> Need to check one AWS resource? Don&rsquo;t mount a 60-tool server for the whole session. Claude can call the <code class="inl">aws</code> or <code class="inl">gh</code> CLI through Bash &mdash; you pay once, nothing lingers.</li>
+        <li><strong>Occasional use of a big surface.</strong> A CLI you invoke when needed beats a permanent definitions tax. CLIs cost tokens only when run.</li>
+        <li><strong>Noisy outputs.</strong> An MCP tool that dumps 10,000 lines of JSON poisons the rest of the session &mdash; that output sits in context degrading every later turn. Prefer tools (or CLIs) with tight, summarizable output.</li>
+      </ul>
+      <div class="callout note"><span class="ch">Rule of thumb</span><p><strong>CLI for occasional, MCP for constant.</strong> If you&rsquo;d use it many times a session, the standing tax amortizes and MCP wins on ergonomics. If you&rsquo;d use it once, the CLI wins on context. The middle is where Tool Search comes in (next).</p></div>
+    </div>
+
+    <!-- 5.5 -->
+    <div class="lesson" data-lesson>
+      <button class="done-toggle" aria-pressed="false"><span class="box"></span> mark done</button>
+      <h3>5.5 · Mitigations &amp; hygiene</h3>
+      <p class="lead">If you do connect servers, these keep the tax and the risk down.</p>
+      <ul>
+        <li><strong>Tool Search.</strong> Enable it (<code class="inl">ENABLE_TOOL_SEARCH</code>) and tool definitions load <em>on demand</em> once they cross a size threshold, instead of squatting in context every turn. This is what makes a 90-tool server tolerable.</li>
+        <li><strong>Disable what you&rsquo;re not using.</strong> Check <code class="inl">/mcp</code> and turn off servers you haven&rsquo;t touched in two weeks. Idle ≠ free.</li>
+        <li><strong>Read-only credentials.</strong> Give a server the least access that works. A query server doesn&rsquo;t need write keys.</li>
+      </ul>
+      <div class="callout danger"><span class="ch">Security · audit before you connect</span><p>A third-party MCP server runs with <em>your</em> access and can see what Claude sends it. Treat connecting one like <code class="inl">npm install</code>-ing a dependency you didn&rsquo;t read: audit the source, prefer official/first-party servers, and assume a compromised server is a path to your data. This pairs with Module 02 &mdash; a <code class="inl">deny</code> rule on <code class="inl">.env</code> still holds regardless of what a server requests.</p></div>
+    </div>
+
+    <!-- 5.6 -->
+    <div class="lesson" data-lesson>
+      <button class="done-toggle" aria-pressed="false"><span class="box"></span> mark done</button>
+      <h3>5.6 · <code class="inl">/chrome</code> &mdash; the browser as a tool</h3>
+      <p class="lead">A built-in path to the outside world that earns its own command: your actual browser.</p>
+      <p>The <code class="inl">/chrome</code> integration connects Claude Code to the Claude-in-Chrome extension and your <em>logged-in</em> browser session. Claude can navigate, screenshot, read the console, inspect the DOM, and record GIFs. That unlocks:</p>
+      <ul>
+        <li><strong>Live debugging</strong> &mdash; read a console error, fix the code, reload, confirm.</li>
+        <li><strong>Design verification</strong> &mdash; compare a rendered page against a mockup.</li>
+        <li><strong>Form / flow testing</strong> and <strong>visual regression</strong> across changes.</li>
+      </ul>
+      <div class="callout gotcha"><span class="ch">Gotcha · it&rsquo;s beta, and picky</span><p><code class="inl">/chrome</code> is beta: Chrome/Edge only, and <strong>not supported on WSL</strong>, Brave, or Arc. It shares your real browser state, so be deliberate about what&rsquo;s logged in. For <em>unattended</em> CI-style automation, a Playwright or Chrome-DevTools MCP server is the better fit. The reason it matters here: <code class="inl">/chrome</code> closes the loop that becomes Module 06&rsquo;s self-correcting verification &mdash; edit, screenshot, detect, fix, with no human in the middle.</p></div>
+    </div>
+
+    <!-- Try it -->
+    <div class="lesson" data-lesson>
+      <button class="done-toggle" aria-pressed="false"><span class="box"></span> mark done</button>
+      <h3>Try it yourself</h3>
+      <p class="lead">Tick as you go &mdash; these feed your meter.</p>
+      <ul class="tasks" id="tasks">
+        <li data-task><span class="tick"></span><span class="tk">Run <code class="inl">/context</code> with no servers, connect one, run it again<small>see the definitions tax appear</small></span></li>
+        <li data-task><span class="tick"></span><span class="tk">Add one server with <code class="inl">claude mcp add</code> and check <code class="inl">/mcp</code> status<small>note the transport and scope you chose</small></span></li>
+        <li data-task><span class="tick"></span><span class="tk">Do a one-off task with a CLI via Bash instead of a server<small>e.g. <code class="inl">gh pr list</code> rather than the GitHub MCP</small></span></li>
+        <li data-task><span class="tick"></span><span class="tk">Turn on Tool Search and re-measure a heavy server&rsquo;s cost<small>watch idle definitions drop</small></span></li>
+        <li data-task><span class="tick"></span><span class="tk">Connect <code class="inl">/chrome</code> and have Claude screenshot a local page<small>skip if you&rsquo;re on WSL</small></span></li>
+      </ul>
+    </div>
+
+    <!-- Quiz -->
+    <div class="quiz" data-lesson>
+      <span class="qh">Knowledge check · 05</span>
+      <div class="q">You need a <em>one-time</em> check of a single AWS resource. You could connect the AWS MCP server (60+ tools) or let Claude call the <code class="inl" style="font-size:.8em">aws</code> CLI via Bash. Best choice?</div>
+      <button class="opt" data-correct="false"><span class="lt">A</span><span>Connect the MCP server &mdash; it&rsquo;s purpose-built for AWS and more reliable.</span></button>
+      <button class="opt" data-correct="true"><span class="lt">B</span><span>Use the <code class="inl" style="font-size:.85em">aws</code> CLI via Bash &mdash; no standing context tax; you pay tokens only for the one command.</span></button>
+      <button class="opt" data-correct="false"><span class="lt">C</span><span>Connect the MCP server, then disconnect it right after.</span></button>
+      <button class="opt" data-correct="false"><span class="lt">D</span><span>Ask Claude what it already knows about your AWS setup.</span></button>
+      <div class="verdict" id="v1"></div>
+    </div>
+
+  </div>
+</section>
+
+<section class="next">
+  <div class="wrap">
+    <h2>Module 06 is next: Hooks</h2>
+    <p>You&rsquo;ve now seen three things that <em>persuade</em> Claude &mdash; CLAUDE.md, memory, tool descriptions. Hooks are different: they <em>guarantee</em>. Deterministic code that fires on lifecycle events and can hard-block an action, every time.</p>
+  </div>
+</section>
+
+<nav class="pager">
+  <a class="pg prev" href="04-skills.html"><small>previous</small>← 04 · Skills</a>
+  <a class="pg next" href="06-hooks.html"><small>next module</small>06 · Hooks →</a>
+</nav>
+
+<footer class="wrap">
+  <span>OPERATOR&rsquo;S PATH · CHUNK 05</span><span>·</span>
+  <span>verified against code.claude.com/docs</span><span>·</span>
+  <span>Claude Code 2.1.x · June 2026</span>
+</footer>
+
+<div class="float-prog" id="float" hidden>
+  <div class="ring">
+    <svg width="34" height="34"><circle cx="17" cy="17" r="14" fill="none" stroke="rgba(255,255,255,.18)" stroke-width="4"/><circle id="ring" cx="17" cy="17" r="14" fill="none" stroke="#C96442" stroke-width="4" stroke-linecap="round" stroke-dasharray="88" stroke-dashoffset="88"/></svg>
+    <span class="pct" id="ringpct">0</span>
+  </div>
+  <span id="floatlabel">getting started</span>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  // ---- decision engine ----
+  var ans = {freq:null, tools:null, trust:null};
+  var taxByTools = {few:"~3K tokens/turn", dozens:"~12K tokens/turn", tons:"~30K+ tokens/turn"};
+  var dq = {freq:document.getElementById("dq1"), tools:document.getElementById("dq2"), trust:document.getElementById("dq3")};
+  var dv = document.getElementById("dv");
+
+  function pickHandlers(qEl, key){
+    qEl.querySelectorAll(".dopt").forEach(function(b){
+      b.addEventListener("click", function(){
+        qEl.querySelectorAll(".dopt").forEach(function(x){ x.classList.remove("sel"); });
+        b.classList.add("sel");
+        ans[key] = b.getAttribute("data-v");
+        if(key==="freq"){ dq.tools.classList.remove("hidden"); }
+        if(key==="tools"){
+          dq.trust.classList.remove("hidden");
+          document.getElementById("dtax").textContent = "est. always-on cost: " + taxByTools[ans.tools];
+        }
+        if(ans.freq && ans.tools && ans.trust){ verdict(); }
+      });
+    });
+  }
+  pickHandlers(dq.freq,"freq"); pickHandlers(dq.tools,"tools"); pickHandlers(dq.trust,"trust");
+
+  function verdict(){
+    var rec, cls, reason, mit;
+    if(ans.freq==="oneoff"){
+      rec="Use a CLI — don't connect"; cls="cli";
+      reason="A server taxes every turn for the whole session. For a one-time need, have Claude call the CLI (gh, aws, psql) through Bash. You pay once; nothing lingers in context.";
+      mit="Mitigation: none needed — Bash + CLI is the lightweight path.";
+    } else if(ans.freq==="occasional"){
+      cls="caution";
+      if(ans.tools==="few"){
+        rec="Probably a CLI";
+        reason="A handful of tools used only occasionally is borderline. The CLI usually wins on context. Connect MCP only if the workflow is genuinely awkward through a CLI.";
+      } else {
+        rec="CLI, or MCP + Tool Search";
+        reason="Occasional use doesn't justify a permanent " + taxByTools[ans.tools] + " tax. Prefer the CLI; if you must connect, gate it behind Tool Search so definitions load on demand.";
+      }
+      mit="Mitigation: ENABLE_TOOL_SEARCH defers tool definitions until needed; /mcp to disable when idle.";
+    } else { // session
+      if(ans.tools==="few"){
+        rec="Connect MCP ✓"; cls="go";
+        reason="Frequent use + a small tool surface = MCP earns its place. A " + taxByTools[ans.tools] + " standing cost pays for itself many times over in a session.";
+        mit="Mitigation: minimal — keep credentials read-only and you're set.";
+      } else if(ans.tools==="dozens"){
+        rec="Connect MCP — with Tool Search"; cls="go";
+        reason="Worth connecting for constant use, but dozens of tools is real overhead every turn (" + taxByTools[ans.tools] + "). Turn on Tool Search so you're not paying for tools you didn't call.";
+        mit="Mitigation: ENABLE_TOOL_SEARCH is strongly recommended here.";
+      } else {
+        rec="Connect — but Tool Search is mandatory"; cls="caution";
+        reason="50+ tools can cost ~17K+ per request (GitHub's server does exactly this). Connect for constant use, but without Tool Search you'll lose a tenth of your window before typing a word.";
+        mit="Mitigation: ENABLE_TOOL_SEARCH is non-negotiable at this tool count.";
+      }
+    }
+    dv.className = "dverdict show " + cls;
+    document.getElementById("dvrec").textContent = rec;
+    document.getElementById("dvreason").textContent = reason;
+    document.getElementById("dvmit").textContent = mit;
+    var tr = document.getElementById("dvtrust");
+    if(ans.trust==="third"){
+      tr.className = "trust show";
+      tr.innerHTML = "⚠ Third-party server: audit the source before connecting and use read-only credentials. It runs with your access and sees what Claude sends it.";
+    } else { tr.className = "trust"; }
+  }
+
+  document.getElementById("dreset").addEventListener("click", function(){
+    ans = {freq:null, tools:null, trust:null};
+    [dq.freq,dq.tools,dq.trust].forEach(function(q){ q.querySelectorAll(".dopt").forEach(function(x){ x.classList.remove("sel"); }); });
+    dq.tools.classList.add("hidden"); dq.trust.classList.add("hidden");
+    dv.className = "dverdict";
+    document.getElementById("dtax").textContent = "est. always-on cost: —";
+  });
+
+  // ---- progress engine ----
+  var toggles = Array.prototype.slice.call(document.querySelectorAll(".done-toggle"));
+  var tasks = Array.prototype.slice.call(document.querySelectorAll("#tasks li"));
+  var totalUnits = toggles.length + tasks.length + 1;
+  var quizDone = false;
+  function tally(){
+    var done=0;
+    toggles.forEach(function(t){ if(t.classList.contains("done")) done++; });
+    tasks.forEach(function(t){ if(t.classList.contains("done")) done++; });
+    if(quizDone) done++;
+    var pct = Math.round(done/totalUnits*100);
+    document.getElementById("bar").style.width = pct+"%";
+    document.getElementById("metaProg").textContent = "MODULE 05 / 08 · "+pct+"% complete";
+    document.getElementById("ring").style.strokeDashoffset = 88-(88*pct/100);
+    document.getElementById("ringpct").textContent = pct;
+    var f=document.getElementById("float"); f.hidden=(pct===0);
+    var label=document.getElementById("floatlabel");
+    if(pct===0) label.textContent="getting started";
+    else if(pct<50) label.textContent="warming up";
+    else if(pct<100) label.textContent="most of the way";
+    else { label.textContent="module clear — go to 06"; f.style.background="#2E6E5B"; }
+  }
+  toggles.forEach(function(t){
+    t.addEventListener("click", function(){
+      var on=t.classList.toggle("done"); t.setAttribute("aria-pressed",on);
+      t.lastChild.textContent = on ? " done" : " mark done"; tally();
+    });
+  });
+  tasks.forEach(function(li){ li.addEventListener("click", function(){ li.classList.toggle("done"); tally(); }); });
+
+  document.querySelectorAll(".copy").forEach(function(btn){
+    btn.addEventListener("click", function(){
+      var txt=btn.getAttribute("data-copy");
+      navigator.clipboard && navigator.clipboard.writeText(txt).then(function(){
+        var o=btn.textContent; btn.textContent="copied ✓"; setTimeout(function(){ btn.textContent=o; },1300);
+      });
+    });
+  });
+
+  var opts = Array.prototype.slice.call(document.querySelectorAll(".opt"));
+  var verdictEl = document.getElementById("v1");
+  opts.forEach(function(o){
+    o.addEventListener("click", function(){
+      if(quizDone) return;
+      var right = o.getAttribute("data-correct")==="true";
+      opts.forEach(function(x){ x.disabled=true; if(x.getAttribute("data-correct")==="true") x.classList.add("correct"); });
+      if(!right) o.classList.add("wrong");
+      verdictEl.className="verdict show "+(right?"right":"nope");
+      verdictEl.innerHTML = right
+        ? "<b>Right.</b> A 60-tool server would tax every turn of the whole session for a single lookup. The CLI through Bash costs tokens only for the one command it runs. CLI for occasional/one-off, MCP for constant — that's the rule. (C is just wasted setup; D risks a stale or invented answer.)"
+        : "<b>No.</b> Connecting a 60-tool server for one lookup means paying its definitions tax on every turn for the rest of the session. Let Claude call the <code class='inl'>aws</code> CLI via Bash instead — cost is incurred only when the command runs. CLI for occasional, MCP for constant.";
+      quizDone=true; tally();
+    });
+  });
+
+  tally();
+})();
+</script>
+<script>
+(function(){
+  var t=document.querySelector('.navtoggle'),
+      s=document.querySelector('.sidenav'),
+      c=document.querySelector('.navscrim');
+  if(!t||!s) return;
+  function close(){s.classList.remove('open'); if(c)c.classList.remove('open');}
+  t.addEventListener('click',function(){
+    var o=s.classList.toggle('open'); if(c)c.classList.toggle('open',o);
+  });
+  if(c)c.addEventListener('click',close);
+  s.addEventListener('click',function(e){ if(e.target.closest('a')) close(); });
+  document.addEventListener('keydown',function(e){ if(e.key==='Escape') close(); });
+})();
+</script>
+
+</body>
+</html>

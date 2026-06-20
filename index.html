@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Operator's Path · Claude Code</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F2EEE6; --paper-2:#E8E1D4; --panel:#FBF9F4;
+    --ink:#1B1915; --slate:#6E665A; --slate-2:#928979;
+    --clay:#C96442; --clay-deep:#A84E30; --clay-soft:#F0D9CE;
+    --signal:#2E6E5B; --signal-soft:#D6E6DF;
+    --line:#D8D0C0; --line-strong:#C4BAA6;
+    --term-bg:#16140F; --term-fg:#ECE6D8; --term-dim:#8E8674;
+    --display:"Bricolage Grotesque",serif;
+    --body:"IBM Plex Sans",sans-serif;
+    --mono:"JetBrains Mono",monospace;
+    --r:14px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0; background:var(--paper); color:var(--ink); font-family:var(--body); font-size:17px; line-height:1.62; -webkit-font-smoothing:antialiased}
+  ::selection{background:var(--clay-soft)}
+  .wrap{max-width:1180px; margin:0 auto; padding:0 24px}
+
+  .topbar{position:sticky; top:0; z-index:50; background:rgba(242,238,230,.86); backdrop-filter:blur(10px); border-bottom:1px solid var(--line)}
+  .topbar-in{display:flex; align-items:center; gap:18px; height:60px}
+  a.brand{font-family:var(--mono); font-weight:700; font-size:14px; letter-spacing:.04em; display:flex; align-items:center; gap:9px; text-decoration:none; color:inherit}
+  .brand .dot{width:11px; height:11px; border-radius:50%; background:var(--clay); box-shadow:0 0 0 3px var(--clay-soft)}
+  .topbar .meta{margin-left:auto; font-family:var(--mono); font-size:12px; color:var(--slate); letter-spacing:.03em}
+
+  /* ---------- sidebar nav ---------- */
+  .navtoggle{display:inline-flex; align-items:center; justify-content:center; width:38px; height:38px; border:1px solid var(--line); border-radius:10px; background:var(--paper); color:var(--ink); cursor:pointer; padding:0; flex:0 0 auto}
+  .navtoggle span{display:block; width:17px; height:2px; background:currentColor; border-radius:2px; position:relative}
+  .navtoggle span::before,.navtoggle span::after{content:""; position:absolute; left:0; width:17px; height:2px; background:currentColor; border-radius:2px}
+  .navtoggle span::before{top:-5px} .navtoggle span::after{top:5px}
+  .sidenav{position:fixed; top:0; left:0; bottom:0; width:250px; z-index:70; background:var(--panel); border-right:1px solid var(--line); display:flex; flex-direction:column; padding:18px 14px; overflow-y:auto; transform:translateX(-100%); transition:transform .25s ease}
+  .sidenav.open{transform:none}
+  .sidehead{display:flex; align-items:center; gap:9px; font-family:var(--mono); font-weight:700; font-size:13px; letter-spacing:.04em; text-decoration:none; color:inherit; padding:4px 8px 14px; border-bottom:1px solid var(--line); margin-bottom:12px}
+  .sidehead .dot{width:11px; height:11px; border-radius:50%; background:var(--clay); box-shadow:0 0 0 3px var(--clay-soft); flex:0 0 auto}
+  .sidenav-list{display:flex; flex-direction:column; gap:4px}
+  .mp{display:flex; align-items:center; gap:10px; text-decoration:none; padding:9px 12px; border-radius:10px; border:1px solid transparent; background:transparent; color:var(--slate); font-family:var(--mono); font-size:12.5px; white-space:nowrap; transition:.15s}
+  .mp:hover{background:var(--paper); color:var(--ink)}
+  .mp .mpn{font-weight:700; flex:0 0 auto; width:22px; text-align:center}
+  .mp .mpl{font-size:12px}
+  .mp.current{background:var(--clay-soft); border-color:var(--clay); color:var(--clay-deep)}
+  .mp.off{opacity:.42; pointer-events:none}
+  .mp.home .mpn{color:var(--clay)}
+  .navscrim{position:fixed; inset:0; background:rgba(20,18,14,.42); z-index:65; opacity:0; pointer-events:none; transition:opacity .25s}
+  .navscrim.open{opacity:1; pointer-events:auto}
+  @media(min-width:1100px){
+    .sidenav{transform:none}
+    body{padding-left:250px}
+    .navtoggle{display:none}
+    .navscrim{display:none}
+  }
+
+  .hero{padding:66px 0 8px}
+  .eyebrow{font-family:var(--mono); font-size:12.5px; letter-spacing:.18em; text-transform:uppercase; color:var(--clay-deep); font-weight:500}
+  .hero h1{font-family:var(--display); font-weight:800; line-height:1.02; font-size:clamp(42px,7.5vw,82px); letter-spacing:-.025em; margin:14px 0 0}
+  .hero h1 .thin{font-weight:400; color:var(--slate)}
+  .hero p.lede{font-size:20px; color:var(--slate); max-width:62ch; margin:20px 0 0}
+  .stat-row{display:flex; flex-wrap:wrap; gap:26px; margin:30px 0 0; font-family:var(--mono)}
+  .stat .n{font-family:var(--display); font-weight:800; font-size:30px; color:var(--clay-deep); line-height:1}
+  .stat .l{font-size:11.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--slate-2); margin-top:5px}
+
+  section.block{padding:52px 0 30px; border-top:1px solid var(--line); margin-top:48px}
+  .sec-head{display:flex; align-items:baseline; gap:16px; margin-bottom:6px}
+  .sec-num{font-family:var(--mono); font-size:13px; color:var(--clay-deep); font-weight:700; letter-spacing:.05em}
+  .sec-head h2{font-family:var(--display); font-weight:800; font-size:clamp(26px,4vw,38px); letter-spacing:-.01em; margin:0}
+  .sec-sub{color:var(--slate); max-width:64ch; margin:10px 0 30px; font-size:17px}
+
+  .road{display:grid; grid-template-columns:repeat(2,1fr); gap:14px}
+  @media(max-width:720px){.road{grid-template-columns:1fr}}
+  .stop{position:relative; background:var(--panel); border:1px solid var(--line); border-radius:var(--r); padding:18px 18px 18px 20px; display:flex; gap:15px; align-items:flex-start; transition:.2s; text-decoration:none; color:inherit}
+  a.stop:hover{border-color:var(--line-strong); transform:translateY(-2px)}
+  .stop .idx{font-family:var(--mono); font-weight:700; font-size:14px; color:#fff; background:var(--slate-2); width:30px; height:30px; border-radius:8px; display:grid; place-items:center; flex:0 0 auto}
+  .stop.open{border-color:var(--clay); box-shadow:0 0 0 3px var(--clay-soft)}
+  .stop.open .idx{background:var(--clay)}
+  .stop h3{margin:0 0 3px; font-family:var(--display); font-weight:600; font-size:18px}
+  .stop p{margin:0; font-size:14px; color:var(--slate); line-height:1.5}
+  .stop .tag{font-family:var(--mono); font-size:10.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--slate-2); margin-top:7px; display:inline-block}
+  .stop.open .tag{color:var(--clay-deep)}
+  .stop.locked{opacity:.6}
+
+  .note-line{font-family:var(--mono); font-size:12.5px; color:var(--slate-2); margin-top:20px}
+  .legend{display:flex; gap:18px; flex-wrap:wrap; font-family:var(--mono); font-size:12px; color:var(--slate); margin:16px 0 0}
+  .legend i{display:inline-block; width:10px; height:10px; border-radius:3px; margin-right:6px; vertical-align:middle}
+  .legend .a{background:var(--clay)} .legend .b{background:var(--slate-2); opacity:.5}
+
+  footer{border-top:1px solid var(--line); padding:30px 0 60px; margin-top:40px; font-family:var(--mono); font-size:12px; color:var(--slate-2); display:flex; flex-wrap:wrap; gap:8px 18px}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="wrap topbar-in">
+    <button class="navtoggle" aria-label="Toggle module menu" aria-controls="sidenav"><span></span></button>
+    <a class="brand" href="index.html"><span class="dot"></span> OPERATOR&rsquo;S&nbsp;PATH</a>
+    <div class="meta">8 MODULES · ALL LIVE</div>
+  </div>
+</div>
+<aside class="sidenav" id="sidenav" aria-label="All modules">
+  <a class="sidehead" href="index.html"><span class="dot"></span> OPERATOR&rsquo;S&nbsp;PATH</a>
+  <nav class="sidenav-list">
+    <a class="mp home current" href="index.html"><span class="mpn">&#9733;</span><span class="mpl">Path</span></a>
+    <a class="mp" href="01-ground-control.html"><span class="mpn">01</span><span class="mpl">Ground Control</span></a>
+    <a class="mp" href="02-trust-and-permissions.html"><span class="mpn">02</span><span class="mpl">Permissions</span></a>
+    <a class="mp" href="03-context-engineering.html"><span class="mpn">03</span><span class="mpl">Context</span></a>
+    <a class="mp" href="04-skills.html"><span class="mpn">04</span><span class="mpl">Skills</span></a>
+    <a class="mp" href="05-mcp.html"><span class="mpn">05</span><span class="mpl">MCP</span></a>
+    <a class="mp" href="06-hooks.html"><span class="mpn">06</span><span class="mpl">Hooks</span></a>
+    <a class="mp" href="07-parallel.html"><span class="mpn">07</span><span class="mpl">Parallel</span></a>
+    <a class="mp" href="08-agentic-engineering.html"><span class="mpn">08</span><span class="mpl">Agentic Eng.</span></a>
+  </nav>
+</aside>
+<div class="navscrim" aria-hidden="true"></div>
+
+<header class="hero">
+  <div class="wrap">
+    <span class="eyebrow">A self-driven course · built from official docs</span>
+    <h1>Operating Claude Code,<br><span class="thin">one earned step at a time.</span></h1>
+    <p class="lede">Eight modules, resequenced from the original two-session course so each one is a prerequisite for the next. Every claim checked against Anthropic&rsquo;s own documentation; the version-dependent parts flagged as exactly that. Pick up wherever you left off.</p>
+    <div class="stat-row">
+      <div class="stat"><div class="n">8</div><div class="l">modules</div></div>
+      <div class="stat"><div class="n">8</div><div class="l">all live</div></div>
+      <div class="stat"><div class="n">~3h</div><div class="l">full read</div></div>
+      <div class="stat"><div class="n">2.1.x</div><div class="l">docs baseline</div></div>
+    </div>
+  </div>
+</header>
+
+<section class="block">
+  <div class="wrap">
+    <div class="sec-head"><span class="sec-num">THE PATH</span><h2>Eight modules, in order</h2></div>
+    <p class="sec-sub">The original course front-loads fundamentals into one sitting and scaling into another. This path sequences by dependency &mdash; you won&rsquo;t hit a concept before the thing it relies on.</p>
+    <div class="road">
+      <a class="stop open" href="01-ground-control.html">
+        <span class="idx">1</span>
+        <div><h3>Ground Control</h3><p>The agentic loop, install, your first real session.</p><span class="tag">open · interactive</span></div>
+      </a>
+      <a class="stop open" href="02-trust-and-permissions.html">
+        <span class="idx">2</span>
+        <div><h3>Trust &amp; Permissions</h3><p>Five modes, Shift+Tab, allow/deny rules, settings hierarchy.</p><span class="tag">open · interactive</span></div>
+      </a>
+      <a class="stop open" href="03-context-engineering.html">
+        <span class="idx">3</span>
+        <div><h3>Context Engineering</h3><p>Finite memory, CLAUDE.md, auto memory, compaction.</p><span class="tag">open · highest leverage</span></div>
+      </a>
+      <a class="stop open" href="04-skills.html">
+        <span class="idx">4</span>
+        <div><h3>Skills</h3><p>SKILL.md anatomy, progressive disclosure, authoring.</p><span class="tag">open · interactive</span></div>
+      </a>
+      <a class="stop open" href="05-mcp.html">
+        <span class="idx">5</span>
+        <div><h3>MCP &amp; the Outside World</h3><p>Transports, setup, and when not to use it.</p><span class="tag">open · interactive</span></div>
+      </a>
+      <a class="stop open" href="06-hooks.html">
+        <span class="idx">6</span>
+        <div><h3>Hooks</h3><p>Lifecycle events, deterministic guardrails.</p><span class="tag">open · interactive</span></div>
+      </a>
+      <a class="stop open" href="07-parallel.html">
+        <span class="idx">7</span>
+        <div><h3>Going Parallel</h3><p>Subagents vs. agent teams vs. worktrees.</p><span class="tag">open · interactive</span></div>
+      </a>
+      <a class="stop open" href="08-agentic-engineering.html">
+        <span class="idx">8</span>
+        <div><h3>Agentic Engineering</h3><p>Five pillars, compound engineering, plugins.</p><span class="tag">open · finale</span></div>
+      </a>
+    </div>
+    <div class="legend"><span><i class="a"></i>open now</span><span><i class="b"></i>finale</span></div>
+    <p class="note-line">All eight modules are live. Each opens in its own page; the switcher up top jumps between any of them. Start at 01 or pick up wherever you left off.</p>
+  </div>
+</section>
+
+<footer class="wrap">
+  <span>OPERATOR&rsquo;S PATH · ~/dev/learning/claude</span><span>·</span>
+  <span>verified against code.claude.com/docs</span><span>·</span>
+  <span>Claude Code 2.1.x · June 2026</span>
+</footer>
+
+<script>
+(function(){
+  var t=document.querySelector('.navtoggle'),
+      s=document.querySelector('.sidenav'),
+      c=document.querySelector('.navscrim');
+  if(!t||!s) return;
+  function close(){s.classList.remove('open'); if(c)c.classList.remove('open');}
+  t.addEventListener('click',function(){
+    var o=s.classList.toggle('open'); if(c)c.classList.toggle('open',o);
+  });
+  if(c)c.addEventListener('click',close);
+  s.addEventListener('click',function(e){ if(e.target.closest('a')) close(); });
+  document.addEventListener('keydown',function(e){ if(e.key==='Escape') close(); });
+})();
+</script>
+
+</body>
+</html>

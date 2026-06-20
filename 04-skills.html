@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Operator's Path · 04 Skills</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F2EEE6; --paper-2:#E8E1D4; --panel:#FBF9F4;
+    --ink:#1B1915; --slate:#6E665A; --slate-2:#928979;
+    --clay:#C96442; --clay-deep:#A84E30; --clay-soft:#F0D9CE;
+    --signal:#2E6E5B; --signal-soft:#D6E6DF;
+    --amber:#C98A1F; --amber-soft:#F2E3C4;
+    --deny:#A23C3C; --deny-soft:#EFD7D3;
+    --violet:#6E5A96; --violet-soft:#E2DBEE;
+    --term-bg:#16140F; --term-fg:#ECE6D8; --term-dim:#8E8674;
+    --line:#D8D0C0; --line-strong:#C4BAA6;
+    --display:"Bricolage Grotesque",serif;
+    --body:"IBM Plex Sans",sans-serif;
+    --mono:"JetBrains Mono",monospace;
+    --r:14px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0; background:var(--paper); color:var(--ink); font-family:var(--body); font-size:17px; line-height:1.62; -webkit-font-smoothing:antialiased}
+  ::selection{background:var(--clay-soft)}
+  a{color:var(--clay-deep)}
+  .wrap{max-width:1180px; margin:0 auto; padding:0 24px}
+
+  .topbar{position:sticky; top:0; z-index:50; background:rgba(242,238,230,.86); backdrop-filter:blur(10px); border-bottom:1px solid var(--line)}
+  .topbar-in{display:flex; align-items:center; gap:18px; height:60px}
+  a.brand{font-family:var(--mono); font-weight:700; font-size:14px; letter-spacing:.04em; display:flex; align-items:center; gap:9px; text-decoration:none; color:inherit}
+  .brand .dot{width:11px; height:11px; border-radius:50%; background:var(--clay); box-shadow:0 0 0 3px var(--clay-soft)}
+  .topbar .meta{margin-left:auto; font-family:var(--mono); font-size:12px; color:var(--slate); letter-spacing:.03em}
+  .pbar{height:3px; background:var(--paper-2)}
+  .pbar > i{display:block; height:100%; width:0; background:linear-gradient(90deg,var(--clay),var(--clay-deep)); transition:width .5s cubic-bezier(.4,0,.2,1)}
+
+  /* ---------- sidebar nav ---------- */
+  .navtoggle{display:inline-flex; align-items:center; justify-content:center; width:38px; height:38px; border:1px solid var(--line); border-radius:10px; background:var(--paper); color:var(--ink); cursor:pointer; padding:0; flex:0 0 auto}
+  .navtoggle span{display:block; width:17px; height:2px; background:currentColor; border-radius:2px; position:relative}
+  .navtoggle span::before,.navtoggle span::after{content:""; position:absolute; left:0; width:17px; height:2px; background:currentColor; border-radius:2px}
+  .navtoggle span::before{top:-5px} .navtoggle span::after{top:5px}
+  .sidenav{position:fixed; top:0; left:0; bottom:0; width:250px; z-index:70; background:var(--panel); border-right:1px solid var(--line); display:flex; flex-direction:column; padding:18px 14px; overflow-y:auto; transform:translateX(-100%); transition:transform .25s ease}
+  .sidenav.open{transform:none}
+  .sidehead{display:flex; align-items:center; gap:9px; font-family:var(--mono); font-weight:700; font-size:13px; letter-spacing:.04em; text-decoration:none; color:inherit; padding:4px 8px 14px; border-bottom:1px solid var(--line); margin-bottom:12px}
+  .sidehead .dot{width:11px; height:11px; border-radius:50%; background:var(--clay); box-shadow:0 0 0 3px var(--clay-soft); flex:0 0 auto}
+  .sidenav-list{display:flex; flex-direction:column; gap:4px}
+  .mp{display:flex; align-items:center; gap:10px; text-decoration:none; padding:9px 12px; border-radius:10px; border:1px solid transparent; background:transparent; color:var(--slate); font-family:var(--mono); font-size:12.5px; white-space:nowrap; transition:.15s}
+  .mp:hover{background:var(--paper); color:var(--ink)}
+  .mp .mpn{font-weight:700; flex:0 0 auto; width:22px; text-align:center}
+  .mp .mpl{font-size:12px}
+  .mp.current{background:var(--clay-soft); border-color:var(--clay); color:var(--clay-deep)}
+  .mp.off{opacity:.42; pointer-events:none}
+  .mp.home .mpn{color:var(--clay)}
+  .navscrim{position:fixed; inset:0; background:rgba(20,18,14,.42); z-index:65; opacity:0; pointer-events:none; transition:opacity .25s}
+  .navscrim.open{opacity:1; pointer-events:auto}
+  @media(min-width:1100px){
+    .sidenav{transform:none}
+    body{padding-left:250px}
+    .navtoggle{display:none}
+    .navscrim{display:none}
+  }
+
+  .hero{padding:58px 0 16px}
+  .eyebrow{font-family:var(--mono); font-size:12.5px; letter-spacing:.18em; text-transform:uppercase; color:var(--clay-deep); font-weight:500}
+  .hero h1{font-family:var(--display); font-weight:800; line-height:1.03; font-size:clamp(38px,6.2vw,66px); letter-spacing:-.02em; margin:14px 0 0}
+  .hero h1 .thin{font-weight:400; color:var(--slate)}
+  .hero p.lede{font-size:20px; color:var(--slate); max-width:60ch; margin:18px 0 0}
+
+  /* ---------- disclosure ladder (signature) ---------- */
+  .ladder{background:var(--panel); border:1px solid var(--line-strong); border-radius:20px; padding:24px 26px 26px; margin:36px 0 6px; box-shadow:0 20px 50px -34px rgba(0,0,0,.4)}
+  .llabel{font-family:var(--mono); font-size:12px; letter-spacing:.1em; text-transform:uppercase; color:var(--slate); margin-bottom:16px}
+  .cost{display:flex; align-items:baseline; gap:10px; margin-bottom:18px; flex-wrap:wrap}
+  .cost .costn{font-family:var(--display); font-weight:800; font-size:36px; line-height:1; letter-spacing:-.02em; color:var(--clay-deep); transition:.3s}
+  .cost .lab{font-family:var(--mono); font-size:13px; color:var(--slate)}
+  .cost .costsub{font-family:var(--mono); font-size:12px; color:var(--slate-2); margin-left:auto}
+  .tiers{display:grid; gap:10px}
+  .tier{border:1px solid var(--line); border-radius:12px; padding:14px 16px; background:var(--paper); transition:.3s; position:relative}
+  .tier .th{font-family:var(--mono); font-size:11px; letter-spacing:.07em; text-transform:uppercase; display:flex; justify-content:space-between; gap:8px; margin-bottom:9px}
+  .tier .th .lvl{font-weight:700}
+  .tier .th .when{color:var(--slate-2)}
+  .tier.t1{border-color:var(--signal); background:var(--signal-soft)}
+  .tier.t1 .lvl{color:var(--signal)}
+  .tier.t2{border-color:var(--amber)} .tier.t2 .lvl{color:var(--amber)}
+  .tier.t3{border-color:var(--violet)} .tier.t3 .lvl{color:var(--violet)}
+  .tier.dormant{opacity:.4; filter:grayscale(.5)}
+  .tier.dormant .body-snip, .tier.dormant .file-snip{display:none}
+  .tier.dormant .dorm-note{display:block}
+  .dorm-note{display:none; font-family:var(--mono); font-size:12px; color:var(--slate-2)}
+  .skillrow{display:flex; flex-wrap:wrap; gap:7px}
+  .skchip{font-family:var(--mono); font-size:11.5px; padding:6px 10px; border-radius:8px; border:1px solid #A9CEC1; background:#fff; color:var(--ink); transition:.25s}
+  .skchip b{color:var(--signal)}
+  .skchip.matched{border-color:var(--clay); background:var(--clay-soft); box-shadow:0 0 0 2px var(--clay-soft)}
+  .skchip.matched b{color:var(--clay-deep)}
+  .skchip small{color:var(--slate-2); display:block; font-size:10px; margin-top:1px}
+  .body-snip,.file-snip{font-family:var(--mono); font-size:12px; color:var(--ink); line-height:1.6; white-space:pre-wrap}
+  .body-snip .c{color:var(--slate-2)}
+  .lnarr{margin:16px 0 14px; font-size:14.5px; padding:12px 15px; border-radius:10px; background:var(--paper-2); color:var(--ink); border-left:3px solid var(--clay); min-height:44px}
+  .lctl{display:flex; gap:8px; flex-wrap:wrap}
+  .lbtn{font:inherit; font-family:var(--mono); font-size:13px; cursor:pointer; border-radius:9px; padding:11px 16px; border:1px solid var(--ink); background:var(--ink); color:var(--paper); transition:.15s}
+  .lbtn:hover{background:#2a2620}
+  .lbtn.ghost{background:var(--paper); color:var(--slate); border-color:var(--line-strong)}
+  .lbtn.ghost:hover{border-color:var(--clay); color:var(--ink); background:var(--paper)}
+  .lbtn:disabled{opacity:.4; cursor:default}
+
+  section.block{padding:52px 0; border-top:1px solid var(--line)}
+  .sec-head{display:flex; align-items:baseline; gap:16px; margin-bottom:6px}
+  .sec-num{font-family:var(--mono); font-size:13px; color:var(--clay-deep); font-weight:700; letter-spacing:.05em}
+  .sec-head h2{font-family:var(--display); font-weight:800; font-size:clamp(26px,4vw,38px); letter-spacing:-.01em; margin:0}
+  .sec-sub{color:var(--slate); max-width:62ch; margin:10px 0 28px; font-size:17px}
+  .module-intro{display:flex; flex-wrap:wrap; gap:10px; margin-bottom:8px}
+  .chip{font-family:var(--mono); font-size:12px; padding:5px 11px; border-radius:99px; border:1px solid var(--line-strong); color:var(--slate); background:var(--panel)}
+  .chip.live{color:var(--signal); border-color:var(--signal); background:var(--signal-soft)}
+
+  .lesson{background:var(--panel); border:1px solid var(--line); border-radius:var(--r); padding:26px 28px; margin:18px 0; position:relative}
+  .lesson h3{font-family:var(--display); font-weight:800; font-size:23px; letter-spacing:-.01em; margin:0 0 4px; padding-right:120px}
+  .lesson .lead{color:var(--slate); margin:0 0 16px; font-size:16px}
+  .lesson p{margin:14px 0}
+  .lesson ul{margin:14px 0; padding-left:0; list-style:none}
+  .lesson ul li{position:relative; padding-left:26px; margin:9px 0}
+  .lesson ul li::before{content:"›"; position:absolute; left:6px; top:-1px; color:var(--clay); font-weight:700; font-family:var(--mono)}
+  .lesson strong{font-weight:600}
+  code.inl{font-family:var(--mono); font-size:.86em; background:var(--paper-2); padding:2px 6px; border-radius:5px; color:var(--clay-deep)}
+
+  .twocol{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:16px 0}
+  @media(max-width:640px){.twocol{grid-template-columns:1fr}}
+  .card{border:1px solid var(--line); border-radius:12px; padding:16px 18px; background:var(--paper)}
+  .card.no{border-color:#D8A39C; background:var(--deny-soft)}
+  .card.yes{border-color:#A9CEC1; background:var(--signal-soft)}
+  .card h4{margin:0 0 8px; font-family:var(--mono); font-size:12px; letter-spacing:.08em; text-transform:uppercase}
+  .card.no h4{color:var(--deny)} .card.yes h4{color:var(--signal)}
+  .card .ex{font-family:var(--mono); font-size:12.5px; line-height:1.55; color:var(--ink)}
+  .card .ex .k{color:var(--slate-2)}
+
+  .done-toggle{position:absolute; top:24px; right:26px; font:inherit; font-family:var(--mono); font-size:12px; letter-spacing:.03em; padding:7px 13px; border-radius:99px; border:1px solid var(--line-strong); background:var(--paper); color:var(--slate); cursor:pointer; transition:.2s; display:flex; gap:7px; align-items:center}
+  .done-toggle:hover{border-color:var(--clay)}
+  .done-toggle .box{width:13px; height:13px; border-radius:4px; border:1.5px solid var(--slate-2); display:grid; place-items:center}
+  .done-toggle.done{background:var(--signal-soft); border-color:var(--signal); color:var(--signal)}
+  .done-toggle.done .box{background:var(--signal); border-color:var(--signal)}
+  .done-toggle.done .box::after{content:"✓"; color:#fff; font-size:10px; line-height:1}
+  @media(max-width:620px){.done-toggle{position:static; margin-bottom:14px} .lesson h3{padding-right:0}}
+
+  .term{background:var(--term-bg); border-radius:12px; overflow:hidden; margin:18px 0; box-shadow:0 14px 40px -22px rgba(0,0,0,.55)}
+  .term-bar{display:flex; align-items:center; gap:7px; padding:11px 15px; background:#211E17; border-bottom:1px solid #2c2820}
+  .term-bar i{width:11px; height:11px; border-radius:50%; background:#3a352b; display:block}
+  .term-bar i:nth-child(1){background:#C96442}
+  .term-bar .ttl{margin-left:8px; font-family:var(--mono); font-size:11.5px; color:var(--term-dim); letter-spacing:.03em}
+  .term-bar .copy{margin-left:auto; font-family:var(--mono); font-size:11px; color:var(--term-dim); background:none; border:1px solid #322d24; border-radius:6px; padding:4px 9px; cursor:pointer; transition:.15s}
+  .term-bar .copy:hover{color:var(--term-fg); border-color:#4a4438}
+  .term pre{margin:0; padding:18px; overflow-x:auto; font-family:var(--mono); font-size:13px; line-height:1.7; color:var(--term-fg)}
+  .term .pr{color:var(--clay)} .term .cm{color:var(--term-dim)} .term .ok{color:#7FB59E} .term .em{color:#E3B23C} .term .key{color:#9FB6D8} .term .str{color:#C9A876} .term .dir{color:#9FB6D8}
+
+  .callout{border-radius:12px; padding:16px 18px; margin:18px 0; border:1px solid; font-size:15.5px}
+  .callout .ch{font-family:var(--mono); font-size:11.5px; letter-spacing:.1em; text-transform:uppercase; font-weight:700; display:block; margin-bottom:5px}
+  .callout p{margin:6px 0 0}
+  .callout.gotcha{background:var(--amber-soft); border-color:#E0C079} .callout.gotcha .ch{color:var(--amber)}
+  .callout.note{background:var(--signal-soft); border-color:#A9CEC1} .callout.note .ch{color:var(--signal)}
+
+  details.deep{border:1px solid var(--line); border-radius:12px; margin:16px 0; background:var(--panel); overflow:hidden}
+  details.deep summary{cursor:pointer; padding:15px 18px; font-family:var(--mono); font-size:13px; font-weight:500; letter-spacing:.02em; color:var(--clay-deep); list-style:none; display:flex; align-items:center; gap:9px}
+  details.deep summary::-webkit-details-marker{display:none}
+  details.deep summary .pl{transition:.2s; font-weight:700}
+  details.deep[open] summary .pl{transform:rotate(45deg)}
+  details.deep .inside{padding:0 18px 18px; border-top:1px solid var(--line)}
+  details.deep .inside p:first-child{margin-top:14px}
+
+  .tasks{list-style:none; padding:0; margin:16px 0}
+  .tasks li{display:flex; gap:13px; align-items:flex-start; padding:13px 15px; border:1px solid var(--line); border-radius:10px; margin:8px 0; background:var(--panel); cursor:pointer; transition:.15s}
+  .tasks li:hover{border-color:var(--line-strong)}
+  .tasks li .tick{width:22px; height:22px; border-radius:7px; border:2px solid var(--slate-2); flex:0 0 auto; margin-top:1px; display:grid; place-items:center; transition:.2s}
+  .tasks li.done{background:var(--signal-soft); border-color:#A9CEC1}
+  .tasks li.done .tick{background:var(--signal); border-color:var(--signal)}
+  .tasks li.done .tick::after{content:"✓"; color:#fff; font-size:13px}
+  .tasks li.done .tk{text-decoration:line-through; color:var(--slate)}
+  .tasks li .tk{font-size:15.5px}
+  .tasks li .tk small{display:block; font-family:var(--mono); font-size:12px; color:var(--slate); margin-top:2px; text-decoration:none}
+
+  .quiz{background:linear-gradient(180deg,var(--panel),var(--paper)); border:1px solid var(--line-strong); border-radius:var(--r); padding:26px 28px; margin:24px 0}
+  .quiz .qh{font-family:var(--mono); font-size:12px; letter-spacing:.12em; text-transform:uppercase; color:var(--clay-deep); font-weight:700}
+  .quiz .q{font-family:var(--display); font-weight:600; font-size:20px; margin:8px 0 16px}
+  .opt{display:block; width:100%; text-align:left; font:inherit; font-size:15.5px; background:var(--paper); border:1px solid var(--line-strong); border-radius:10px; padding:13px 16px; margin:9px 0; cursor:pointer; transition:.15s; display:flex; gap:11px; align-items:center}
+  .opt:hover{border-color:var(--clay)}
+  .opt .lt{font-family:var(--mono); font-weight:700; color:var(--slate); width:18px; flex:0 0 auto}
+  .opt.correct{background:var(--signal-soft); border-color:var(--signal); color:var(--signal)} .opt.correct .lt{color:var(--signal)}
+  .opt.wrong{background:var(--deny-soft); border-color:var(--deny); color:var(--deny)} .opt.wrong .lt{color:var(--deny)}
+  .opt:disabled{cursor:default}
+  .verdict{margin-top:14px; font-size:15px; padding:13px 16px; border-radius:10px; display:none}
+  .verdict.show{display:block}
+  .verdict.right{background:var(--signal-soft); color:var(--signal)}
+  .verdict.nope{background:var(--amber-soft); color:var(--amber)}
+
+  .pager{display:flex; justify-content:space-between; gap:12px; padding:30px 24px 0; max-width:1180px; margin:0 auto}
+  .pg{text-decoration:none; font-family:var(--mono); font-size:13px; color:var(--clay-deep); border:1px solid var(--line-strong); border-radius:11px; padding:12px 17px; background:var(--panel); transition:.15s; max-width:48%}
+  .pg:hover{border-color:var(--clay)}
+  .pg small{display:block; font-size:10.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--slate-2); margin-bottom:2px}
+  .pg.next{text-align:right; margin-left:auto}
+  .pg.ghost{opacity:.45; pointer-events:none}
+
+  .next{border-top:1px solid var(--line); padding:48px 0 30px; text-align:center}
+  .next h2{font-family:var(--display); font-weight:800; font-size:30px; margin:0 0 8px}
+  .next p{color:var(--slate); max-width:54ch; margin:0 auto 22px}
+  .next .cmd{font-family:var(--mono); font-size:14px; background:var(--term-bg); color:var(--term-fg); display:inline-block; padding:13px 20px; border-radius:10px}
+  .next .cmd b{color:var(--clay)}
+
+  footer{border-top:1px solid var(--line); padding:26px 0 60px; font-family:var(--mono); font-size:12px; color:var(--slate-2); display:flex; flex-wrap:wrap; gap:8px 18px}
+
+  .float-prog{position:fixed; right:18px; bottom:18px; z-index:60; background:var(--ink); color:var(--paper); border-radius:14px; padding:13px 16px; font-family:var(--mono); font-size:12px; box-shadow:0 16px 40px -16px rgba(0,0,0,.5); display:flex; align-items:center; gap:11px}
+  .float-prog .ring{position:relative; width:34px; height:34px}
+  .float-prog svg{transform:rotate(-90deg)}
+  .float-prog .pct{position:absolute; inset:0; display:grid; place-items:center; font-weight:700; font-size:11px}
+  @media(max-width:520px){.float-prog{left:18px; right:18px; justify-content:center}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="wrap topbar-in">
+    <button class="navtoggle" aria-label="Toggle module menu" aria-controls="sidenav"><span></span></button>
+    <a class="brand" href="index.html"><span class="dot"></span> OPERATOR&rsquo;S&nbsp;PATH</a>
+    <div class="meta" id="metaProg">MODULE 04 / 08 · 0% complete</div>
+  </div>
+  <div class="pbar"><i id="bar"></i></div>
+</div>
+<aside class="sidenav" id="sidenav" aria-label="All modules">
+  <a class="sidehead" href="index.html"><span class="dot"></span> OPERATOR&rsquo;S&nbsp;PATH</a>
+  <nav class="sidenav-list">
+    <a class="mp home" href="index.html"><span class="mpn">&#9733;</span><span class="mpl">Path</span></a>
+    <a class="mp" href="01-ground-control.html"><span class="mpn">01</span><span class="mpl">Ground Control</span></a>
+    <a class="mp" href="02-trust-and-permissions.html"><span class="mpn">02</span><span class="mpl">Permissions</span></a>
+    <a class="mp" href="03-context-engineering.html"><span class="mpn">03</span><span class="mpl">Context</span></a>
+    <a class="mp current" href="04-skills.html"><span class="mpn">04</span><span class="mpl">Skills</span></a>
+    <a class="mp" href="05-mcp.html"><span class="mpn">05</span><span class="mpl">MCP</span></a>
+    <a class="mp" href="06-hooks.html"><span class="mpn">06</span><span class="mpl">Hooks</span></a>
+    <a class="mp" href="07-parallel.html"><span class="mpn">07</span><span class="mpl">Parallel</span></a>
+    <a class="mp" href="08-agentic-engineering.html"><span class="mpn">08</span><span class="mpl">Agentic Eng.</span></a>
+  </nav>
+</aside>
+<div class="navscrim" aria-hidden="true"></div>
+
+<header class="hero">
+  <div class="wrap">
+    <span class="eyebrow">Module 04 · reusable workflows, near-zero cost</span>
+    <h1>Where procedures<br><span class="thin">actually belong.</span></h1>
+    <p class="lede">Module 03 told you not to stuff workflows into CLAUDE.md. Skills are the answer: folders of instructions Claude loads <em>only when relevant</em>. The trick that makes them scale is progressive disclosure &mdash; and it&rsquo;s worth seeing before you read a word about it.</p>
+
+    <div class="ladder" id="ladder">
+      <div class="llabel">Progressive disclosure &mdash; step through what loads, and when</div>
+      <div class="cost">
+        <span class="costn" id="costn">~210</span>
+        <span class="lab">tokens in context</span>
+        <span class="costsub" id="costsub">6 skills installed · idle</span>
+      </div>
+      <div class="tiers">
+        <div class="tier t1" id="t1">
+          <div class="th"><span class="lvl">Tier 1 · metadata</span><span class="when">always loaded · ~35 tok each</span></div>
+          <div class="skillrow" id="skillrow"></div>
+        </div>
+        <div class="tier t2 dormant" id="t2">
+          <div class="th"><span class="lvl">Tier 2 · body</span><span class="when">loads on trigger · ~450 tok</span></div>
+          <span class="dorm-note">not loaded &mdash; no skill triggered yet</span>
+          <div class="body-snip"><span class="c"># pdf/SKILL.md body</span>
+1. Validate each input is a real PDF
+2. Merge in the given order with pypdf
+3. If a form is involved, see references/forms.md
+4. Run scripts/merge.py and verify page count</div>
+        </div>
+        <div class="tier t3 dormant" id="t3">
+          <div class="th"><span class="lvl">Tier 3 · bundled files</span><span class="when">read on demand · 0 until used</span></div>
+          <span class="dorm-note">not loaded &mdash; body hasn&rsquo;t reached for them</span>
+          <div class="file-snip"><span class="c">references/forms.md →</span> loaded because this task touched a form
+<span class="c">scripts/merge.py →</span> executed; only its result returns to context</div>
+        </div>
+      </div>
+      <div class="lnarr" id="lnarr">Six skills installed. Right now only their one-line descriptions sit in context &mdash; about 35 tokens each. The bodies aren&rsquo;t loaded. Step through to see what a trigger actually costs.</div>
+      <div class="lctl">
+        <button class="lbtn" id="lnext">▶ user types: &ldquo;merge these quarterly PDFs&rdquo;</button>
+        <button class="lbtn ghost" id="lreset">reset</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<section class="block" id="m4">
+  <div class="wrap">
+    <div class="sec-head"><span class="sec-num">MODULE 04</span><h2>Skills</h2></div>
+    <div class="module-intro">
+      <span class="chip live">● core</span>
+      <span class="chip">~26 min read</span>
+      <span class="chip">SKILL.md anatomy</span>
+      <span class="chip">6 lessons · 1 check</span>
+    </div>
+    <p class="sec-sub">What a skill is, why progressive disclosure makes them nearly free, how a SKILL.md is built, the one part everyone botches (the description), where they live, and how they compose.</p>
+
+    <!-- 4.1 -->
+    <div class="lesson" data-lesson>
+      <button class="done-toggle" aria-pressed="false"><span class="box"></span> mark done</button>
+      <h3>4.1 · What a skill is</h3>
+      <p class="lead">A folder with a <code class="inl">SKILL.md</code> inside it. That&rsquo;s the whole primitive.</p>
+      <p>A skill packages a repeatable workflow &mdash; &ldquo;how we cut a release,&rdquo; &ldquo;how to merge PDFs,&rdquo; &ldquo;how to triage a log&rdquo; &mdash; as instructions Claude pulls in when the task calls for it. It&rsquo;s the direct answer to the question Module 03 left open: procedures don&rsquo;t go in CLAUDE.md (that bloats every session), and they don&rsquo;t stay in your head (Claude can&rsquo;t see them). They go in a skill, where they sit dormant until needed.</p>
+      <div class="callout note"><span class="ch">Lineage</span><p>Skills are the modern replacement for the legacy <code class="inl">.claude/commands/</code> mechanism. If you&rsquo;ve seen old custom-command setups, skills are the same idea grown up &mdash; with triggering, bundled files, and composition.</p></div>
+    </div>
+
+    <!-- 4.2 -->
+    <div class="lesson" data-lesson>
+      <button class="done-toggle" aria-pressed="false"><span class="box"></span> mark done</button>
+      <h3>4.2 · Progressive disclosure &mdash; why they&rsquo;re nearly free</h3>
+      <p class="lead">The mechanism the ladder above demonstrates. Three tiers, each loaded later and only if needed.</p>
+      <ul>
+        <li><strong>Tier 1 &mdash; metadata.</strong> The skill&rsquo;s <code class="inl">name</code> + <code class="inl">description</code> only. Always pre-loaded into the system prompt so Claude knows the skill <em>exists</em>. Tiny &mdash; tens of tokens.</li>
+        <li><strong>Tier 2 &mdash; body.</strong> The full SKILL.md instructions. Loaded <em>only when the skill triggers</em>. A few hundred tokens, paid once, only when relevant.</li>
+        <li><strong>Tier 3 &mdash; bundled files.</strong> <code class="inl">scripts/</code>, <code class="inl">references/</code>, <code class="inl">assets/</code>. Read on demand when the body reaches for them; scripts execute outside the window entirely. Effectively unbounded supporting context at near-zero cost until used.</li>
+      </ul>
+      <div class="callout note"><span class="ch">The payoff</span><p>This is why you can install dozens of skills and barely move idle context &mdash; you only ever pay metadata for the ones you don&rsquo;t use. It&rsquo;s Module 03&rsquo;s &ldquo;smallest high-signal set&rdquo; principle, built into the primitive. Skills are how you give Claude enormous capability without filling its window.</p></div>
+    </div>
+
+    <!-- 4.3 -->
+    <div class="lesson" data-lesson>
+      <button class="done-toggle" aria-pressed="false"><span class="box"></span> mark done</button>
+      <h3>4.3 · Anatomy of a SKILL.md</h3>
+      <p class="lead">YAML frontmatter on top, markdown instructions below, optional folders alongside.</p>
+      <div class="term">
+        <div class="term-bar"><i></i><i></i><i></i><span class="ttl">.claude/skills/pdf/</span></div>
+        <pre><span class="dir">pdf/</span>
+├── SKILL.md        <span class="cm"># required: frontmatter + body</span>
+├── <span class="dir">scripts/</span>        <span class="cm"># optional: executable helpers</span>
+│   └── merge.py
+├── <span class="dir">references/</span>     <span class="cm"># optional: docs loaded on demand</span>
+│   └── forms.md
+└── <span class="dir">assets/</span>         <span class="cm"># optional: templates, files</span></pre>
+      </div>
+      <div class="term">
+        <div class="term-bar"><i></i><i></i><i></i><span class="ttl">SKILL.md</span><button class="copy" data-copy='---
+name: pdf
+description: Merge, split, and fill PDF files. Use whenever the user mentions a .pdf, asks to combine/merge PDFs, or fill a PDF form.
+---
+
+# Working with PDFs
+1. Validate each input is a real PDF.
+2. Merge in the requested order using pypdf.
+3. For forms, see references/forms.md.
+4. Run scripts/merge.py and verify the page count.'>copy</button></div>
+        <pre><span class="cm">---</span>
+<span class="key">name</span>: <span class="str">pdf</span>
+<span class="key">description</span>: <span class="str">Merge, split, and fill PDF files. Use whenever
+  the user mentions a .pdf, asks to combine/merge PDFs,
+  or fill a PDF form.</span>
+<span class="cm">---</span>
+
+<span class="em"># Working with PDFs</span>
+1. Validate each input is a real PDF.
+2. Merge in the requested order using pypdf.
+3. For forms, see references/forms.md.
+4. Run scripts/merge.py and verify the page count.</pre>
+      </div>
+      <p><code class="inl">name</code> and <code class="inl">description</code> are the only required fields. Everything else &mdash; the body, the folders &mdash; is optional scaffolding. Keep the body lean: roughly <strong>under 500 lines</strong> (~1,500&ndash;2,000 words). Past that, push detail into <code class="inl">references/</code> where it loads on demand.</p>
+    </div>
+
+    <!-- 4.4 -->
+    <div class="lesson" data-lesson>
+      <button class="done-toggle" aria-pressed="false"><span class="box"></span> mark done</button>
+      <h3>4.4 · The description <em>is</em> the trigger</h3>
+      <p class="lead">The single most important &mdash; and most botched &mdash; line in any skill. It&rsquo;s the only part Claude sees before deciding whether to load the rest.</p>
+      <p>Claude matches the user&rsquo;s request against descriptions (Tier 1). A vague description never fires; the skill sits there, perfectly written, never used. State <strong>what it does AND when to use it</strong>, with concrete trigger phrases.</p>
+      <div class="twocol">
+        <div class="card no"><h4>Won&rsquo;t trigger</h4><div class="ex"><span class="k">description:</span> Helps with PDF tasks.</div><p style="margin:10px 0 0;font-size:13.5px;color:var(--slate)">Too vague. What tasks? Triggered by what words? Claude under-fires on this.</p></div>
+        <div class="card yes"><h4>Fires reliably</h4><div class="ex"><span class="k">description:</span> Merge, split, and fill PDF files. Use whenever the user mentions a .pdf, asks to combine/merge PDFs, or fill a form.</div><p style="margin:10px 0 0;font-size:13.5px;color:var(--slate)">Concrete verbs + explicit trigger conditions.</p></div>
+      </div>
+      <div class="callout gotcha"><span class="ch">Be a little pushy</span><p>Anthropic&rsquo;s own skill-creator guidance notes Claude tends to <em>under-</em>trigger, so descriptions should lean assertive about when to activate. Other authoring habits that help: name skills as gerunds (&ldquo;merging-pdfs&rdquo;), and in the body explain the <em>why</em> behind a rule rather than barking bare ALL-CAPS imperatives &mdash; reasons generalize to cases you didn&rsquo;t foresee; commands don&rsquo;t.</p></div>
+    </div>
+
+    <!-- 4.5 -->
+    <div class="lesson" data-lesson>
+      <button class="done-toggle" aria-pressed="false"><span class="box"></span> mark done</button>
+      <h3>4.5 · Where they live &amp; who can invoke them</h3>
+      <p class="lead">Three locations by scope, plus two frontmatter switches that control invocation.</p>
+      <ul>
+        <li><code class="inl">~/.claude/skills/</code> &mdash; <strong>user</strong> scope. Available in every project. Your personal toolkit.</li>
+        <li><code class="inl">.claude/skills/</code> &mdash; <strong>project</strong> scope. Committed to the repo, shared with the team.</li>
+        <li>Nested project dirs &mdash; loaded on demand when Claude works in that area.</li>
+      </ul>
+      <p>On a name collision, <strong>the more specific scope wins</strong> (project overrides user). Two switches worth knowing:</p>
+      <ul>
+        <li><code class="inl">disable-model-invocation: true</code> &mdash; Claude won&rsquo;t auto-trigger it; you invoke it yourself as a slash command (e.g. <code class="inl">/deploy</code>). For things that should only run when <em>you</em> say so.</li>
+        <li><code class="inl">user-invocable: false</code> &mdash; the inverse: background knowledge Claude can pull in, but you can&rsquo;t call directly.</li>
+      </ul>
+      <div class="callout gotcha"><span class="ch">Gotcha · reload behavior</span><p>Editing a SKILL.md&rsquo;s text is picked up live in-session. But adding a <em>new</em> top-level skill directory typically needs a restart before Claude sees it. If your fresh skill isn&rsquo;t firing, restart before you debug the description.</p></div>
+    </div>
+
+    <!-- 4.6 -->
+    <div class="lesson" data-lesson>
+      <button class="done-toggle" aria-pressed="false"><span class="box"></span> mark done</button>
+      <h3>4.6 · Composability &amp; built-ins</h3>
+      <p class="lead">Small skills that call other skills beat one monolith.</p>
+      <p>Skills compose &mdash; one can invoke another &mdash; so the right unit is small and single-purpose, not a 600-line do-everything skill. A <code class="inl">release</code> skill can lean on a <code class="inl">changelog</code> skill and a <code class="inl">test-runner</code> skill. Claude Code also ships built-in skills for common document and workflow tasks, so check what already exists before authoring. This composition instinct is the seed of <em>compound engineering</em> &mdash; the Module 08 idea that each thing you build makes the next one cheaper.</p>
+      <details class="deep">
+        <summary><span class="pl">+</span> Skill vs. CLAUDE.md vs. hook &mdash; the three-way decision</summary>
+        <div class="inside">
+          <p><strong>CLAUDE.md</strong> = durable facts, always loaded (conventions, build commands). <strong>Skill</strong> = a procedure, loaded when triggered (how to do a multi-step task). <strong>Hook</strong> = a rule that must hold every time, enforced deterministically (Module 06). The mistake is reaching for CLAUDE.md for all three. A bloated CLAUDE.md full of step-by-step procedures is the #1 symptom of not knowing this split &mdash; move the procedures to skills and the file gets short and well-followed again.</p>
+        </div>
+      </details>
+    </div>
+
+    <!-- Try it -->
+    <div class="lesson" data-lesson>
+      <button class="done-toggle" aria-pressed="false"><span class="box"></span> mark done</button>
+      <h3>Try it yourself</h3>
+      <p class="lead">Tick as you go &mdash; these feed your meter.</p>
+      <ul class="tasks" id="tasks">
+        <li data-task><span class="tick"></span><span class="tk">Create <code class="inl">.claude/skills/&lt;name&gt;/SKILL.md</code> with name + description<small>start with one repeatable thing you do weekly</small></span></li>
+        <li data-task><span class="tick"></span><span class="tk">Write a description with explicit trigger phrases, then test it fires<small>say one of the trigger phrases and watch it load</small></span></li>
+        <li data-task><span class="tick"></span><span class="tk">Move a multi-step procedure out of CLAUDE.md into a skill<small>watch CLAUDE.md get shorter</small></span></li>
+        <li data-task><span class="tick"></span><span class="tk">Add a <code class="inl">references/</code> file and reference it from the body<small>confirm it only loads when that path is hit</small></span></li>
+        <li data-task><span class="tick"></span><span class="tk">Make one skill <code class="inl">disable-model-invocation</code> and run it as a slash command<small>e.g. a /deploy you control</small></span></li>
+      </ul>
+    </div>
+
+    <!-- Quiz -->
+    <div class="quiz" data-lesson>
+      <span class="qh">Knowledge check · 04</span>
+      <div class="q">You install 30 skills, each with a ~400-token body. How much does your <em>idle</em> context cost grow, and why?</div>
+      <button class="opt" data-correct="false"><span class="lt">A</span><span>~12,000 tokens &mdash; all 30 bodies load so Claude knows how to use them.</span></button>
+      <button class="opt" data-correct="true"><span class="lt">B</span><span>~1,000 tokens &mdash; only the 30 short descriptions stay loaded; bodies load only when a skill triggers.</span></button>
+      <button class="opt" data-correct="false"><span class="lt">C</span><span>Nothing &mdash; skills never enter context until you call them as slash commands.</span></button>
+      <button class="opt" data-correct="false"><span class="lt">D</span><span>It depends entirely on the size of each skill&rsquo;s <code class="inl" style="font-size:.85em">scripts/</code> folder.</span></button>
+      <div class="verdict" id="v1"></div>
+    </div>
+
+  </div>
+</section>
+
+<section class="next">
+  <div class="wrap">
+    <h2>Module 05 is next: MCP &amp; the Outside World</h2>
+    <p>Skills give Claude procedures. MCP gives it the outside world &mdash; GitHub, databases, browsers. And, crucially, the discipline of when <em>not</em> to connect one, because every server taxes the window you just learned to protect.</p>
+  </div>
+</section>
+
+<nav class="pager">
+  <a class="pg prev" href="03-context-engineering.html"><small>previous</small>← 03 · Context Engineering</a>
+  <a class="pg next" href="05-mcp.html"><small>next module</small>05 · MCP &amp; the Outside World →</a>
+</nav>
+
+<footer class="wrap">
+  <span>OPERATOR&rsquo;S PATH · CHUNK 04</span><span>·</span>
+  <span>verified against code.claude.com/docs</span><span>·</span>
+  <span>Claude Code 2.1.x · June 2026</span>
+</footer>
+
+<div class="float-prog" id="float" hidden>
+  <div class="ring">
+    <svg width="34" height="34"><circle cx="17" cy="17" r="14" fill="none" stroke="rgba(255,255,255,.18)" stroke-width="4"/><circle id="ring" cx="17" cy="17" r="14" fill="none" stroke="#C96442" stroke-width="4" stroke-linecap="round" stroke-dasharray="88" stroke-dashoffset="88"/></svg>
+    <span class="pct" id="ringpct">0</span>
+  </div>
+  <span id="floatlabel">getting started</span>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  // ---- disclosure ladder ----
+  var skills = [
+    {n:"pdf", d:"merge / split / fill PDFs", match:true},
+    {n:"docx", d:"create & edit Word docs"},
+    {n:"commit-msg", d:"write conventional commits"},
+    {n:"deploy", d:"ship to production"},
+    {n:"test-runner", d:"run & summarize the suite"},
+    {n:"db-migrate", d:"author safe migrations"}
+  ];
+  var row = document.getElementById("skillrow");
+  skills.forEach(function(s){
+    var c = document.createElement("div");
+    c.className = "skchip"; c.dataset.n = s.n;
+    c.innerHTML = "<b>"+s.n+"</b><small>"+s.d+"</small>";
+    row.appendChild(c);
+  });
+
+  var t2 = document.getElementById("t2"), t3 = document.getElementById("t3");
+  var costn = document.getElementById("costn"), costsub = document.getElementById("costsub");
+  var narr = document.getElementById("lnarr"), nextBtn = document.getElementById("lnext");
+
+  var steps = [
+    { cost:"~210", sub:"6 skills installed · idle", t2:false, t3:false, match:false,
+      narr:"Six skills installed. Right now only their one-line descriptions sit in context — about 35 tokens each. The bodies aren\u2019t loaded.",
+      btn:"▶ user types: \u201cmerge these quarterly PDFs\u201d" },
+    { cost:"~210", sub:"matching against descriptions", t2:false, t3:false, match:true,
+      narr:"Claude scans the descriptions it already has (Tier 1) and matches <b>pdf</b>. Matching is free — nothing new loaded yet. This is why the description has to be good (lesson 4.4).",
+      btn:"▶ load the matched skill\u2019s body" },
+    { cost:"~660", sub:"+450 · pdf body loaded", t2:true, t3:false, match:true,
+      narr:"<b>Now</b> — and only now — the pdf skill\u2019s SKILL.md body loads. ~450 tokens of instructions enter context. The other five skills still cost nothing but their descriptions.",
+      btn:"▶ body points to references/forms.md" },
+    { cost:"~980", sub:"+320 · reference loaded on demand", t2:true, t3:true, match:true,
+      narr:"The body reaches for a bundled reference file. It loads on demand — only because <em>this</em> task touched a form. A skill could ship 50 reference files; you\u2019d pay for the one you used.",
+      btn:"▶ run scripts/merge.py" },
+    { cost:"~980", sub:"script ran outside the window", t2:true, t3:true, match:true,
+      narr:"The script executes outside the context window entirely; only its result returns. The script file was read on demand, never pre-loaded.",
+      btn:"see the point →" },
+    { cost:"~980", sub:"whole operation · done", t2:true, t3:true, match:true,
+      narr:"<b>Total for the entire operation: under 1K tokens.</b> The other five skills never cost more than their descriptions. Install 50 and idle cost barely moves — that\u2019s progressive disclosure, and it\u2019s why skills scale where stuffing CLAUDE.md doesn\u2019t.",
+      btn:null }
+  ];
+  var si = 0;
+  function renderStep(){
+    var s = steps[si];
+    costn.textContent = s.cost;
+    costsub.textContent = s.sub;
+    narr.innerHTML = s.narr;
+    t2.classList.toggle("dormant", !s.t2);
+    t3.classList.toggle("dormant", !s.t3);
+    var pdf = row.querySelector('[data-n="pdf"]');
+    pdf.classList.toggle("matched", s.match);
+    if(s.btn){ nextBtn.textContent = s.btn; nextBtn.disabled = false; }
+    else { nextBtn.textContent = "✓ done — reset to replay"; nextBtn.disabled = true; }
+  }
+  nextBtn.addEventListener("click", function(){ if(si < steps.length-1){ si++; renderStep(); } });
+  document.getElementById("lreset").addEventListener("click", function(){ si=0; renderStep(); });
+  renderStep();
+
+  // ---- progress engine ----
+  var toggles = Array.prototype.slice.call(document.querySelectorAll(".done-toggle"));
+  var tasks = Array.prototype.slice.call(document.querySelectorAll("#tasks li"));
+  var totalUnits = toggles.length + tasks.length + 1;
+  var quizDone = false;
+  function tally(){
+    var done=0;
+    toggles.forEach(function(t){ if(t.classList.contains("done")) done++; });
+    tasks.forEach(function(t){ if(t.classList.contains("done")) done++; });
+    if(quizDone) done++;
+    var pct = Math.round(done/totalUnits*100);
+    document.getElementById("bar").style.width = pct+"%";
+    document.getElementById("metaProg").textContent = "MODULE 04 / 08 · "+pct+"% complete";
+    document.getElementById("ring").style.strokeDashoffset = 88-(88*pct/100);
+    document.getElementById("ringpct").textContent = pct;
+    var f=document.getElementById("float"); f.hidden=(pct===0);
+    var label=document.getElementById("floatlabel");
+    if(pct===0) label.textContent="getting started";
+    else if(pct<50) label.textContent="warming up";
+    else if(pct<100) label.textContent="most of the way";
+    else { label.textContent="module clear — go to 05"; f.style.background="#2E6E5B"; }
+  }
+  toggles.forEach(function(t){
+    t.addEventListener("click", function(){
+      var on=t.classList.toggle("done"); t.setAttribute("aria-pressed",on);
+      t.lastChild.textContent = on ? " done" : " mark done"; tally();
+    });
+  });
+  tasks.forEach(function(li){ li.addEventListener("click", function(){ li.classList.toggle("done"); tally(); }); });
+
+  document.querySelectorAll(".copy").forEach(function(btn){
+    btn.addEventListener("click", function(){
+      var txt=btn.getAttribute("data-copy");
+      navigator.clipboard && navigator.clipboard.writeText(txt).then(function(){
+        var o=btn.textContent; btn.textContent="copied ✓"; setTimeout(function(){ btn.textContent=o; },1300);
+      });
+    });
+  });
+
+  var opts = Array.prototype.slice.call(document.querySelectorAll(".opt"));
+  var verdict = document.getElementById("v1");
+  opts.forEach(function(o){
+    o.addEventListener("click", function(){
+      if(quizDone) return;
+      var right = o.getAttribute("data-correct")==="true";
+      opts.forEach(function(x){ x.disabled=true; if(x.getAttribute("data-correct")==="true") x.classList.add("correct"); });
+      if(!right) o.classList.add("wrong");
+      verdict.className="verdict show "+(right?"right":"nope");
+      verdict.innerHTML = right
+        ? "<b>Right.</b> Only Tier-1 metadata (the descriptions) stays loaded — roughly a kilotoken for 30 skills. Bodies are Tier 2: they load on trigger, one at a time, and only when matched. That asymmetry is the entire reason skills scale."
+        : "<b>No.</b> That\u2019s the progressive-disclosure miss. Bodies (Tier 2) do <em>not</em> all load — only the ~30 short descriptions stay resident (~1K total), and a body loads only when its skill triggers. C is wrong too: descriptions are always loaded so Claude knows the skill exists.";
+      quizDone=true; tally();
+    });
+  });
+
+  tally();
+})();
+</script>
+<script>
+(function(){
+  var t=document.querySelector('.navtoggle'),
+      s=document.querySelector('.sidenav'),
+      c=document.querySelector('.navscrim');
+  if(!t||!s) return;
+  function close(){s.classList.remove('open'); if(c)c.classList.remove('open');}
+  t.addEventListener('click',function(){
+    var o=s.classList.toggle('open'); if(c)c.classList.toggle('open',o);
+  });
+  if(c)c.addEventListener('click',close);
+  s.addEventListener('click',function(e){ if(e.target.closest('a')) close(); });
+  document.addEventListener('keydown',function(e){ if(e.key==='Escape') close(); });
+})();
+</script>
+
+</body>
+</html>

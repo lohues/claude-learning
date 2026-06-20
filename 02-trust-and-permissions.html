@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Operator's Path · 02 Trust &amp; Permissions</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F2EEE6; --paper-2:#E8E1D4; --panel:#FBF9F4;
+    --ink:#1B1915; --slate:#6E665A; --slate-2:#928979;
+    --clay:#C96442; --clay-deep:#A84E30; --clay-soft:#F0D9CE;
+    --signal:#2E6E5B; --signal-soft:#D6E6DF;
+    --amber:#C98A1F; --amber-soft:#F2E3C4;
+    --deny:#A23C3C; --deny-soft:#EFD7D3;
+    --term-bg:#16140F; --term-fg:#ECE6D8; --term-dim:#8E8674;
+    --line:#D8D0C0; --line-strong:#C4BAA6;
+    --display:"Bricolage Grotesque",serif;
+    --body:"IBM Plex Sans",sans-serif;
+    --mono:"JetBrains Mono",monospace;
+    --r:14px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0; background:var(--paper); color:var(--ink); font-family:var(--body); font-size:17px; line-height:1.62; -webkit-font-smoothing:antialiased}
+  ::selection{background:var(--clay-soft)}
+  a{color:var(--clay-deep)}
+  .wrap{max-width:1180px; margin:0 auto; padding:0 24px}
+
+  .topbar{position:sticky; top:0; z-index:50; background:rgba(242,238,230,.86); backdrop-filter:blur(10px); border-bottom:1px solid var(--line)}
+  .topbar-in{display:flex; align-items:center; gap:18px; height:60px}
+  .brand{font-family:var(--mono); font-weight:700; font-size:14px; letter-spacing:.04em; display:flex; align-items:center; gap:9px}
+  .brand .dot{width:11px; height:11px; border-radius:50%; background:var(--clay); box-shadow:0 0 0 3px var(--clay-soft)}
+  .topbar .meta{margin-left:auto; font-family:var(--mono); font-size:12px; color:var(--slate); letter-spacing:.03em}
+  .pbar{height:3px; background:var(--paper-2)}
+  .pbar > i{display:block; height:100%; width:0; background:linear-gradient(90deg,var(--clay),var(--clay-deep)); transition:width .5s cubic-bezier(.4,0,.2,1)}
+
+  .hero{padding:60px 0 18px}
+  .eyebrow{font-family:var(--mono); font-size:12.5px; letter-spacing:.18em; text-transform:uppercase; color:var(--clay-deep); font-weight:500}
+  .hero h1{font-family:var(--display); font-weight:800; line-height:1.03; font-size:clamp(38px,6.4vw,68px); letter-spacing:-.02em; margin:14px 0 0}
+  .hero h1 .thin{font-weight:400; color:var(--slate)}
+  .hero p.lede{font-size:20px; color:var(--slate); max-width:60ch; margin:18px 0 0}
+
+  /* ---------- permission console (signature) ---------- */
+  .console{background:var(--panel); border:1px solid var(--line-strong); border-radius:20px; padding:26px 26px 28px; margin:38px 0 6px; box-shadow:0 20px 50px -34px rgba(0,0,0,.4)}
+  .console .clabel{font-family:var(--mono); font-size:12px; letter-spacing:.1em; text-transform:uppercase; color:var(--slate); margin-bottom:14px}
+  .spectrum{display:flex; gap:6px; position:relative}
+  @media(max-width:760px){.spectrum{flex-wrap:wrap}}
+  .mode{flex:1; min-width:96px; font:inherit; cursor:pointer; border:1px solid var(--line-strong); background:var(--paper); border-radius:11px; padding:11px 9px; text-align:center; transition:.18s}
+  .mode:hover{border-color:var(--clay)}
+  .mode .mn{font-family:var(--mono); font-size:12.5px; font-weight:700; color:var(--ink); letter-spacing:-.01em}
+  .mode .ms{font-family:var(--mono); font-size:9.5px; letter-spacing:.05em; text-transform:uppercase; color:var(--slate-2); margin-top:3px}
+  .mode.active{border-color:var(--clay); background:#fff; box-shadow:0 0 0 3px var(--clay-soft)}
+  .mode.active .mn{color:var(--clay-deep)}
+  .axis{display:flex; justify-content:space-between; font-family:var(--mono); font-size:10.5px; color:var(--slate-2); margin:9px 2px 22px; letter-spacing:.03em}
+
+  .matrix{display:grid; gap:8px}
+  .act{display:flex; align-items:center; gap:14px; padding:11px 15px; background:var(--paper); border:1px solid var(--line); border-radius:10px}
+  .act .cmd{font-family:var(--mono); font-size:13px; color:var(--ink); flex:1}
+  .act .cmd small{color:var(--slate-2)}
+  .pill{font-family:var(--mono); font-size:11px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; padding:5px 11px; border-radius:99px; white-space:nowrap; transition:.25s}
+  .pill.auto{background:var(--signal-soft); color:var(--signal)}
+  .pill.ask{background:var(--amber-soft); color:var(--amber)}
+  .pill.deny{background:var(--deny-soft); color:var(--deny)}
+  .cnote{margin-top:16px; font-size:14.5px; padding:13px 16px; border-radius:11px; background:var(--paper-2); color:var(--ink); border-left:3px solid var(--clay)}
+  .cnote b{color:var(--clay-deep)}
+
+  section.block{padding:52px 0; border-top:1px solid var(--line)}
+  .sec-head{display:flex; align-items:baseline; gap:16px; margin-bottom:6px}
+  .sec-num{font-family:var(--mono); font-size:13px; color:var(--clay-deep); font-weight:700; letter-spacing:.05em}
+  .sec-head h2{font-family:var(--display); font-weight:800; font-size:clamp(26px,4vw,38px); letter-spacing:-.01em; margin:0}
+  .sec-sub{color:var(--slate); max-width:62ch; margin:10px 0 28px; font-size:17px}
+  .module-intro{display:flex; flex-wrap:wrap; gap:10px; margin-bottom:8px}
+  .chip{font-family:var(--mono); font-size:12px; padding:5px 11px; border-radius:99px; border:1px solid var(--line-strong); color:var(--slate); background:var(--panel)}
+  .chip.live{color:var(--signal); border-color:var(--signal); background:var(--signal-soft)}
+
+  .lesson{background:var(--panel); border:1px solid var(--line); border-radius:var(--r); padding:26px 28px; margin:18px 0; position:relative}
+  .lesson h3{font-family:var(--display); font-weight:800; font-size:23px; letter-spacing:-.01em; margin:0 0 4px; padding-right:120px}
+  .lesson .lead{color:var(--slate); margin:0 0 16px; font-size:16px}
+  .lesson p{margin:14px 0}
+  .lesson ul{margin:14px 0; padding-left:0; list-style:none}
+  .lesson ul li{position:relative; padding-left:26px; margin:9px 0}
+  .lesson ul li::before{content:"›"; position:absolute; left:6px; top:-1px; color:var(--clay); font-weight:700; font-family:var(--mono)}
+  .lesson strong{font-weight:600}
+  code.inl{font-family:var(--mono); font-size:.86em; background:var(--paper-2); padding:2px 6px; border-radius:5px; color:var(--clay-deep)}
+
+  .done-toggle{position:absolute; top:24px; right:26px; font:inherit; font-family:var(--mono); font-size:12px; letter-spacing:.03em; padding:7px 13px; border-radius:99px; border:1px solid var(--line-strong); background:var(--paper); color:var(--slate); cursor:pointer; transition:.2s; display:flex; gap:7px; align-items:center}
+  .done-toggle:hover{border-color:var(--clay)}
+  .done-toggle .box{width:13px; height:13px; border-radius:4px; border:1.5px solid var(--slate-2); display:grid; place-items:center}
+  .done-toggle.done{background:var(--signal-soft); border-color:var(--signal); color:var(--signal)}
+  .done-toggle.done .box{background:var(--signal); border-color:var(--signal)}
+  .done-toggle.done .box::after{content:"✓"; color:#fff; font-size:10px; line-height:1}
+  @media(max-width:620px){.done-toggle{position:static; margin-bottom:14px} .lesson h3{padding-right:0}}
+
+  .term{background:var(--term-bg); border-radius:12px; overflow:hidden; margin:18px 0; box-shadow:0 14px 40px -22px rgba(0,0,0,.55)}
+  .term-bar{display:flex; align-items:center; gap:7px; padding:11px 15px; background:#211E17; border-bottom:1px solid #2c2820}
+  .term-bar i{width:11px; height:11px; border-radius:50%; background:#3a352b; display:block}
+  .term-bar i:nth-child(1){background:#C96442}
+  .term-bar .ttl{margin-left:8px; font-family:var(--mono); font-size:11.5px; color:var(--term-dim); letter-spacing:.03em}
+  .term-bar .copy{margin-left:auto; font-family:var(--mono); font-size:11px; color:var(--term-dim); background:none; border:1px solid #322d24; border-radius:6px; padding:4px 9px; cursor:pointer; transition:.15s}
+  .term-bar .copy:hover{color:var(--term-fg); border-color:#4a4438}
+  .term pre{margin:0; padding:18px; overflow-x:auto; font-family:var(--mono); font-size:13px; line-height:1.7; color:var(--term-fg)}
+  .term .pr{color:var(--clay)} .term .cm{color:var(--term-dim)} .term .ok{color:#7FB59E} .term .em{color:#E3B23C} .term .key{color:#9FB6D8} .term .str{color:#C9A876}
+
+  .callout{border-radius:12px; padding:16px 18px; margin:18px 0; border:1px solid; font-size:15.5px}
+  .callout .ch{font-family:var(--mono); font-size:11.5px; letter-spacing:.1em; text-transform:uppercase; font-weight:700; display:block; margin-bottom:5px}
+  .callout p{margin:6px 0 0}
+  .callout.gotcha{background:var(--amber-soft); border-color:#E0C079} .callout.gotcha .ch{color:var(--amber)}
+  .callout.note{background:var(--signal-soft); border-color:#A9CEC1} .callout.note .ch{color:var(--signal)}
+  .callout.danger{background:var(--deny-soft); border-color:#D8A39C} .callout.danger .ch{color:var(--deny)}
+
+  details.deep{border:1px solid var(--line); border-radius:12px; margin:16px 0; background:var(--panel); overflow:hidden}
+  details.deep summary{cursor:pointer; padding:15px 18px; font-family:var(--mono); font-size:13px; font-weight:500; letter-spacing:.02em; color:var(--clay-deep); list-style:none; display:flex; align-items:center; gap:9px}
+  details.deep summary::-webkit-details-marker{display:none}
+  details.deep summary .pl{transition:.2s; font-weight:700}
+  details.deep[open] summary .pl{transform:rotate(45deg)}
+  details.deep .inside{padding:0 18px 18px; border-top:1px solid var(--line)}
+  details.deep .inside p:first-child{margin-top:14px}
+
+  .hier{display:grid; gap:0; margin:18px 0; border:1px solid var(--line); border-radius:12px; overflow:hidden}
+  .hier .row{display:flex; gap:14px; align-items:center; padding:14px 16px; background:var(--panel); border-top:1px solid var(--line)}
+  .hier .row:first-child{border-top:none}
+  .hier .row .rank{font-family:var(--mono); font-weight:700; font-size:12px; color:#fff; background:var(--slate-2); border-radius:7px; width:26px; height:26px; display:grid; place-items:center; flex:0 0 auto}
+  .hier .row:first-child .rank{background:var(--clay)}
+  .hier .row .path{font-family:var(--mono); font-size:13px; color:var(--clay-deep); flex:0 0 auto; min-width:200px}
+  @media(max-width:620px){.hier .row{flex-wrap:wrap} .hier .row .path{min-width:0}}
+  .hier .row .who{font-size:14px; color:var(--slate)}
+
+  .tasks{list-style:none; padding:0; margin:16px 0}
+  .tasks li{display:flex; gap:13px; align-items:flex-start; padding:13px 15px; border:1px solid var(--line); border-radius:10px; margin:8px 0; background:var(--panel); cursor:pointer; transition:.15s}
+  .tasks li:hover{border-color:var(--line-strong)}
+  .tasks li .tick{width:22px; height:22px; border-radius:7px; border:2px solid var(--slate-2); flex:0 0 auto; margin-top:1px; display:grid; place-items:center; transition:.2s}
+  .tasks li.done{background:var(--signal-soft); border-color:#A9CEC1}
+  .tasks li.done .tick{background:var(--signal); border-color:var(--signal)}
+  .tasks li.done .tick::after{content:"✓"; color:#fff; font-size:13px}
+  .tasks li.done .tk{text-decoration:line-through; color:var(--slate)}
+  .tasks li .tk{font-size:15.5px}
+  .tasks li .tk small{display:block; font-family:var(--mono); font-size:12px; color:var(--slate); margin-top:2px; text-decoration:none}
+
+  .quiz{background:linear-gradient(180deg,var(--panel),var(--paper)); border:1px solid var(--line-strong); border-radius:var(--r); padding:26px 28px; margin:24px 0}
+  .quiz .qh{font-family:var(--mono); font-size:12px; letter-spacing:.12em; text-transform:uppercase; color:var(--clay-deep); font-weight:700}
+  .quiz .q{font-family:var(--display); font-weight:600; font-size:20px; margin:8px 0 16px}
+  .opt{display:block; width:100%; text-align:left; font:inherit; font-size:15.5px; background:var(--paper); border:1px solid var(--line-strong); border-radius:10px; padding:13px 16px; margin:9px 0; cursor:pointer; transition:.15s; display:flex; gap:11px; align-items:center}
+  .opt:hover{border-color:var(--clay)}
+  .opt .lt{font-family:var(--mono); font-weight:700; color:var(--slate); width:18px}
+  .opt.correct{background:var(--signal-soft); border-color:var(--signal); color:var(--signal)} .opt.correct .lt{color:var(--signal)}
+  .opt.wrong{background:var(--deny-soft); border-color:var(--deny); color:var(--deny)} .opt.wrong .lt{color:var(--deny)}
+  .opt:disabled{cursor:default}
+  .verdict{margin-top:14px; font-size:15px; padding:13px 16px; border-radius:10px; display:none}
+  .verdict.show{display:block}
+  .verdict.right{background:var(--signal-soft); color:var(--signal)}
+  .verdict.nope{background:var(--amber-soft); color:var(--amber)}
+
+  .next{border-top:1px solid var(--line); padding:48px 0 80px; text-align:center}
+  .next h2{font-family:var(--display); font-weight:800; font-size:30px; margin:0 0 8px}
+  .next p{color:var(--slate); max-width:54ch; margin:0 auto 22px}
+  .next .cmd{font-family:var(--mono); font-size:14px; background:var(--term-bg); color:var(--term-fg); display:inline-block; padding:13px 20px; border-radius:10px}
+  .next .cmd b{color:var(--clay)}
+
+  footer{border-top:1px solid var(--line); padding:26px 0 60px; font-family:var(--mono); font-size:12px; color:var(--slate-2); display:flex; flex-wrap:wrap; gap:8px 18px}
+
+  .float-prog{position:fixed; right:18px; bottom:18px; z-index:60; background:var(--ink); color:var(--paper); border-radius:14px; padding:13px 16px; font-family:var(--mono); font-size:12px; box-shadow:0 16px 40px -16px rgba(0,0,0,.5); display:flex; align-items:center; gap:11px}
+  .float-prog .ring{position:relative; width:34px; height:34px}
+  .float-prog svg{transform:rotate(-90deg)}
+  .float-prog .pct{position:absolute; inset:0; display:grid; place-items:center; font-weight:700; font-size:11px}
+  @media(max-width:520px){.float-prog{left:18px; right:18px; justify-content:center}}
+
+  /* ---- cross-file navigation ---- */
+  a.brand{text-decoration:none; color:inherit}
+  /* ---------- sidebar nav ---------- */
+  .navtoggle{display:inline-flex; align-items:center; justify-content:center; width:38px; height:38px; border:1px solid var(--line); border-radius:10px; background:var(--paper); color:var(--ink); cursor:pointer; padding:0; flex:0 0 auto}
+  .navtoggle span{display:block; width:17px; height:2px; background:currentColor; border-radius:2px; position:relative}
+  .navtoggle span::before,.navtoggle span::after{content:""; position:absolute; left:0; width:17px; height:2px; background:currentColor; border-radius:2px}
+  .navtoggle span::before{top:-5px} .navtoggle span::after{top:5px}
+  .sidenav{position:fixed; top:0; left:0; bottom:0; width:250px; z-index:70; background:var(--panel); border-right:1px solid var(--line); display:flex; flex-direction:column; padding:18px 14px; overflow-y:auto; transform:translateX(-100%); transition:transform .25s ease}
+  .sidenav.open{transform:none}
+  .sidehead{display:flex; align-items:center; gap:9px; font-family:var(--mono); font-weight:700; font-size:13px; letter-spacing:.04em; text-decoration:none; color:inherit; padding:4px 8px 14px; border-bottom:1px solid var(--line); margin-bottom:12px}
+  .sidehead .dot{width:11px; height:11px; border-radius:50%; background:var(--clay); box-shadow:0 0 0 3px var(--clay-soft); flex:0 0 auto}
+  .sidenav-list{display:flex; flex-direction:column; gap:4px}
+  .mp{display:flex; align-items:center; gap:10px; text-decoration:none; padding:9px 12px; border-radius:10px; border:1px solid transparent; background:transparent; color:var(--slate); font-family:var(--mono); font-size:12.5px; white-space:nowrap; transition:.15s}
+  .mp:hover{background:var(--paper); color:var(--ink)}
+  .mp .mpn{font-weight:700; flex:0 0 auto; width:22px; text-align:center}
+  .mp .mpl{font-size:12px}
+  .mp.current{background:var(--clay-soft); border-color:var(--clay); color:var(--clay-deep)}
+  .mp.off{opacity:.42; pointer-events:none}
+  .mp.home .mpn{color:var(--clay)}
+  .navscrim{position:fixed; inset:0; background:rgba(20,18,14,.42); z-index:65; opacity:0; pointer-events:none; transition:opacity .25s}
+  .navscrim.open{opacity:1; pointer-events:auto}
+  @media(min-width:1100px){
+    .sidenav{transform:none}
+    body{padding-left:250px}
+    .navtoggle{display:none}
+    .navscrim{display:none}
+  }
+  .pager{display:flex; justify-content:space-between; gap:12px; padding:30px 24px 0; max-width:1180px; margin:0 auto}
+  .pg{text-decoration:none; font-family:var(--mono); font-size:13px; color:var(--clay-deep); border:1px solid var(--line-strong); border-radius:11px; padding:12px 17px; background:var(--panel); transition:.15s; max-width:48%}
+  .pg:hover{border-color:var(--clay)}
+  .pg small{display:block; font-size:10.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--slate-2); margin-bottom:2px}
+  .pg.next{text-align:right; margin-left:auto}
+  .pg.ghost{opacity:.45; pointer-events:none}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="wrap topbar-in">
+    <button class="navtoggle" aria-label="Toggle module menu" aria-controls="sidenav"><span></span></button>
+    <a class="brand" href="index.html"><span class="dot"></span> OPERATOR&rsquo;S&nbsp;PATH</a>
+    <div class="meta" id="metaProg">MODULE 02 / 08 · 0% complete</div>
+  </div>
+  <div class="pbar"><i id="bar"></i></div>
+</div>
+<aside class="sidenav" id="sidenav" aria-label="All modules">
+  <a class="sidehead" href="index.html"><span class="dot"></span> OPERATOR&rsquo;S&nbsp;PATH</a>
+  <nav class="sidenav-list">
+    <a class="mp home" href="index.html"><span class="mpn">&#9733;</span><span class="mpl">Path</span></a>
+    <a class="mp" href="01-ground-control.html"><span class="mpn">01</span><span class="mpl">Ground Control</span></a>
+    <a class="mp current" href="02-trust-and-permissions.html"><span class="mpn">02</span><span class="mpl">Permissions</span></a>
+    <a class="mp" href="03-context-engineering.html"><span class="mpn">03</span><span class="mpl">Context</span></a>
+    <a class="mp" href="04-skills.html"><span class="mpn">04</span><span class="mpl">Skills</span></a>
+    <a class="mp" href="05-mcp.html"><span class="mpn">05</span><span class="mpl">MCP</span></a>
+    <a class="mp" href="06-hooks.html"><span class="mpn">06</span><span class="mpl">Hooks</span></a>
+    <a class="mp" href="07-parallel.html"><span class="mpn">07</span><span class="mpl">Parallel</span></a>
+    <a class="mp" href="08-agentic-engineering.html"><span class="mpn">08</span><span class="mpl">Agentic Eng.</span></a>
+  </nav>
+</aside>
+<div class="navscrim" aria-hidden="true"></div>
+
+<header class="hero">
+  <div class="wrap">
+    <span class="eyebrow">Module 02 · the leash before the run</span>
+    <h1>Decide what it can touch<br><span class="thin">before you let it act.</span></h1>
+    <p class="lede">The loop can edit files and run shell commands. Permissions are the dial between &ldquo;asks me everything&rdquo; and &ldquo;nothing stops it.&rdquo; Get this wrong and you either babysit forever or wake up to a force-pushed branch.</p>
+
+    <div class="console" id="console">
+      <div class="clabel">Permission console &mdash; pick a mode, watch what runs</div>
+      <div class="spectrum" id="spectrum"></div>
+      <div class="axis"><span>← you approve more</span><span>nothing stops it →</span></div>
+      <div class="matrix" id="matrix"></div>
+      <div class="cnote" id="cnote"></div>
+    </div>
+  </div>
+</header>
+
+<section class="block" id="m2">
+  <div class="wrap">
+    <div class="sec-head"><span class="sec-num">MODULE 02</span><h2>Trust &amp; Permissions</h2></div>
+    <div class="module-intro">
+      <span class="chip live">● core</span>
+      <span class="chip">~22 min read</span>
+      <span class="chip">5 modes + rules</span>
+      <span class="chip">5 lessons · 1 check</span>
+    </div>
+    <p class="sec-sub">Claude Code is read-only until you say otherwise. This module is the difference between supervised and unsupervised work &mdash; the modes, the live cycle, the rule system, and where settings actually live.</p>
+
+    <!-- 2.1 -->
+    <div class="lesson" data-lesson>
+      <button class="done-toggle" aria-pressed="false"><span class="box"></span> mark done</button>
+      <h3>2.1 · Read-only by default, for a reason</h3>
+      <p class="lead">The power that makes the loop useful &mdash; editing files, running bash &mdash; is the same power that makes it dangerous unsupervised.</p>
+      <p>Out of the box, Claude Code reads and explores freely but <strong>asks before it changes anything</strong>. Every edit, every shell command surfaces a prompt. That&rsquo;s deliberate friction: it keeps a misread instruction from becoming a deleted directory. The whole skill of this module is loosening that friction <em>exactly as much as the situation earns</em> &mdash; no more.</p>
+      <div class="callout note"><span class="ch">Frame</span><p>Think of it as trust you grant in increments. A fresh clone of someone else&rsquo;s repo earns very little. Your own project with 90% test coverage earns a lot. The modes below are the increments.</p></div>
+    </div>
+
+    <!-- 2.2 -->
+    <div class="lesson" data-lesson>
+      <button class="done-toggle" aria-pressed="false"><span class="box"></span> mark done</button>
+      <h3>2.2 · The five modes (and a gated sixth)</h3>
+      <p class="lead">Set with <code class="inl">defaultMode</code> in settings, or switched live. Use the console up top as you read &mdash; each name maps to a row of behavior.</p>
+      <ul>
+        <li><strong><code class="inl">default</code></strong> &mdash; reads auto-approve; edits and most bash prompt you. The safe starting point.</li>
+        <li><strong><code class="inl">acceptEdits</code></strong> &mdash; auto-approves file edits <em>and a specific set of filesystem bash commands</em> on in-scope paths. Fast for your own repo. Not &ldquo;approve everything.&rdquo;</li>
+        <li><strong><code class="inl">plan</code></strong> &mdash; research only. Reads, explores, writes you a plan, makes zero changes. The mode for &ldquo;tell me what you&rsquo;d do&rdquo; before committing.</li>
+        <li><strong><code class="inl">dontAsk</code></strong> &mdash; denies everything <em>unless an allow rule matches</em>. For locked-down headless/CI runs where only a known set of actions is permitted.</li>
+        <li><strong><code class="inl">bypassPermissions</code></strong> &mdash; skips all checks (<code class="inl">--dangerously-skip-permissions</code>, the &ldquo;YOLO&rdquo; flag). Ephemeral, network-isolated sandboxes only.</li>
+      </ul>
+      <div class="callout gotcha"><span class="ch">Gotcha · the gated sixth: <code class="inl">auto</code></span><p>A sixth mode, <code class="inl">auto</code>, only appears for qualifying accounts &mdash; it&rsquo;s plan-, model-, and API-gated (broadly: Team/Enterprise/API plans on direct Anthropic API with a recent model, admin-enabled). The exact tier matrix shifts between releases, so verify against the live docs rather than trusting any blog&rsquo;s list. If you don&rsquo;t see it, that&rsquo;s why.</p></div>
+    </div>
+
+    <!-- 2.3 -->
+    <div class="lesson" data-lesson>
+      <button class="done-toggle" aria-pressed="false"><span class="box"></span> mark done</button>
+      <h3>2.3 · Shift+Tab cycles three &mdash; not all of them</h3>
+      <p class="lead">The most common misconception in this whole module.</p>
+      <p>Pressing <strong>Shift+Tab</strong> mid-session rotates through exactly three modes:</p>
+      <div class="term">
+        <div class="term-bar"><i></i><i></i><i></i><span class="ttl">live mode cycle</span></div>
+        <pre><span class="cm"># press Shift+Tab to rotate:</span>
+default  <span class="pr">→</span>  acceptEdits  <span class="pr">→</span>  plan  <span class="pr">→</span>  (back to default)
+
+<span class="cm"># NOT in the cycle — set deliberately, not by accident:</span>
+<span class="em">dontAsk</span>            <span class="cm">settings.json or --permission-mode</span>
+<span class="em">bypassPermissions</span>  <span class="cm">--dangerously-skip-permissions flag</span>
+<span class="em">auto</span>               <span class="cm">appears only if your account qualifies</span></pre>
+      </div>
+      <p>The design intent is sane: the two genuinely dangerous modes can&rsquo;t be reached by fat-fingering a key combo. You have to <em>choose</em> them, in writing.</p>
+    </div>
+
+    <!-- 2.4 -->
+    <div class="lesson" data-lesson>
+      <button class="done-toggle" aria-pressed="false"><span class="box"></span> mark done</button>
+      <h3>2.4 · Rules beat modes: allow / deny / ask</h3>
+      <p class="lead">Modes are the blunt instrument. Rules are the scalpel &mdash; and they override the mode.</p>
+      <p>In <code class="inl">settings.json</code>, a <code class="inl">permissions</code> block lets you allow, deny, or force-ask specific tools and patterns. Edit it directly or via the <code class="inl">/permissions</code> command:</p>
+      <div class="term">
+        <div class="term-bar"><i></i><i></i><i></i><span class="ttl">.claude/settings.json</span><button class="copy" data-copy='{
+  "permissions": {
+    "allow": ["Bash(npm run test:*)", "Read(src/**)"],
+    "deny":  ["Read(.env*)", "Bash(git push:*)"],
+    "ask":   ["Bash(rm:*)"]
+  }
+}'>copy</button></div>
+        <pre>{
+  <span class="key">"permissions"</span>: {
+    <span class="key">"allow"</span>: [<span class="str">"Bash(npm run test:*)"</span>, <span class="str">"Read(src/**)"</span>],
+    <span class="key">"deny"</span>:  [<span class="str">"Read(.env*)"</span>, <span class="str">"Bash(git push:*)"</span>],
+    <span class="key">"ask"</span>:   [<span class="str">"Bash(rm:*)"</span>]
+  }
+}</pre>
+      </div>
+      <p>The evaluation order on every single tool call:</p>
+      <div class="term">
+        <div class="term-bar"><i></i><i></i><i></i><span class="ttl">decision order</span></div>
+        <pre>PreToolUse hooks <span class="pr">→</span> <span class="em">deny</span> rules <span class="pr">→</span> <span class="ok">allow</span> rules <span class="pr">→</span> ask rules <span class="pr">→</span> mode default</pre>
+      </div>
+      <div class="callout danger"><span class="ch">The load-bearing fact</span><p><b>Deny rules win &mdash; even in <code class="inl">bypassPermissions</code>.</b> A <code class="inl">deny: ["Read(.env*)"]</code> holds no matter how reckless the mode. This is how you make even YOLO mode safe-ish: deny the handful of things that must never happen, then stop worrying about the rest.</p></div>
+    </div>
+
+    <!-- 2.5 -->
+    <div class="lesson" data-lesson>
+      <button class="done-toggle" aria-pressed="false"><span class="box"></span> mark done</button>
+      <h3>2.5 · Where settings live (the hierarchy)</h3>
+      <p class="lead">Same setting, four possible homes. Higher wins. Put each rule where its blast radius belongs.</p>
+      <div class="hier">
+        <div class="row"><span class="rank">1</span><span class="path">managed / enterprise</span><span class="who">Org admin policy. Overrides everyone &mdash; e.g. disabling bypass fleet-wide.</span></div>
+        <div class="row"><span class="rank">2</span><span class="path">.claude/settings.local.json</span><span class="who">Your personal, gitignored overrides for this repo. Not shared.</span></div>
+        <div class="row"><span class="rank">3</span><span class="path">.claude/settings.json</span><span class="who">Project settings, committed. The team&rsquo;s shared rules.</span></div>
+        <div class="row"><span class="rank">4</span><span class="path">~/.claude/settings.json</span><span class="who">Your global defaults across every project.</span></div>
+      </div>
+      <ul>
+        <li>Shared team guardrails (deny <code class="inl">.env</code>, force-ask on <code class="inl">rm</code>) → <strong>committed project settings</strong>, so everyone inherits them.</li>
+        <li>Personal speed tweaks → <strong>local settings</strong>, so you don&rsquo;t impose them on teammates.</li>
+        <li>Admins lock down bypass entirely with <code class="inl">disableBypassPermissionsMode</code> at the managed level.</li>
+      </ul>
+      <div class="callout gotcha"><span class="ch">Gotcha · this is not a security sandbox</span><p>Permissions govern <em>Claude&rsquo;s</em> tool calls; they are not an OS-level jail. A prompt injection hiding in a file Claude reads could still <em>attempt</em> actions. For untrusted code or content, pair permission rules with real sandboxing (containers, isolated VMs). Anthropic is explicit that permissions complement OS sandboxing &mdash; they don&rsquo;t replace it.</p></div>
+    </div>
+
+    <!-- Try it -->
+    <div class="lesson" data-lesson>
+      <button class="done-toggle" aria-pressed="false"><span class="box"></span> mark done</button>
+      <h3>Try it yourself</h3>
+      <p class="lead">Tick as you go &mdash; these feed your meter.</p>
+      <ul class="tasks" id="tasks">
+        <li data-task><span class="tick"></span><span class="tk">Cycle Shift+Tab and watch the mode label change<small>confirm it&rsquo;s only default / acceptEdits / plan</small></span></li>
+        <li data-task><span class="tick"></span><span class="tk">Run <code class="inl">/permissions</code> and read your current allow/deny lists<small>most repos start empty</small></span></li>
+        <li data-task><span class="tick"></span><span class="tk">Add <code class="inl">deny: ["Read(.env*)"]</code> to project settings<small>your first real guardrail</small></span></li>
+        <li data-task><span class="tick"></span><span class="tk">Ask Claude to read <code class="inl">.env</code> and watch the deny hold<small>even try it after switching to acceptEdits</small></span></li>
+      </ul>
+    </div>
+
+    <!-- Quiz -->
+    <div class="quiz" data-lesson>
+      <span class="qh">Knowledge check · 02</span>
+      <div class="q">You switch to <code class="inl" style="font-size:.8em">acceptEdits</code> to move faster on your own repo. Claude runs <code class="inl" style="font-size:.8em">rm -rf dist/</code> without asking you first. Bug, or working as intended?</div>
+      <button class="opt" data-correct="true"><span class="lt">A</span><span>Intended &mdash; <b>acceptEdits auto-approves filesystem bash</b> (including <code class="inl" style="font-size:.85em">rm</code>) on in-scope paths. Add an <code class="inl" style="font-size:.85em">ask</code> or <code class="inl" style="font-size:.85em">deny</code> rule if you don&rsquo;t want that.</span></button>
+      <button class="opt" data-correct="false"><span class="lt">B</span><span>Bug &mdash; acceptEdits only touches file edits, never shell commands.</span></button>
+      <button class="opt" data-correct="false"><span class="lt">C</span><span>Bug &mdash; destructive commands always prompt regardless of mode.</span></button>
+      <button class="opt" data-correct="false"><span class="lt">D</span><span>Intended &mdash; but only because you must have been in bypassPermissions.</span></button>
+      <div class="verdict" id="v1"></div>
+    </div>
+
+  </div>
+</section>
+
+<section class="next">
+  <div class="wrap">
+    <h2>Module 03 is next: Context Engineering</h2>
+    <p>The highest-leverage skill in the whole course. Why the loop gets dumber as it fills up, and how CLAUDE.md, auto memory, and compaction keep it sharp.</p>
+  </div>
+</section>
+
+<nav class="pager">
+  <a class="pg prev" href="01-ground-control.html"><small>previous</small>← 01 · Ground Control</a>
+  <a class="pg next" href="03-context-engineering.html"><small>next module</small>03 · Context Engineering →</a>
+</nav>
+
+<footer class="wrap">
+  <span>OPERATOR&rsquo;S PATH · CHUNK 02</span><span>·</span>
+  <span>verified against code.claude.com/docs</span><span>·</span>
+  <span>Claude Code 2.1.x · June 2026</span>
+</footer>
+
+<div class="float-prog" id="float" hidden>
+  <div class="ring">
+    <svg width="34" height="34"><circle cx="17" cy="17" r="14" fill="none" stroke="rgba(255,255,255,.18)" stroke-width="4"/><circle id="ring" cx="17" cy="17" r="14" fill="none" stroke="#C96442" stroke-width="4" stroke-linecap="round" stroke-dasharray="88" stroke-dashoffset="88"/></svg>
+    <span class="pct" id="ringpct">0</span>
+  </div>
+  <span id="floatlabel">getting started</span>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  // ---- permission console ----
+  var actions = [
+    {id:"read", cmd:"Read", sub:"src/app.ts"},
+    {id:"edit", cmd:"Edit", sub:"a source file"},
+    {id:"fs",   cmd:"Bash", sub:"mkdir / touch"},
+    {id:"test", cmd:"Bash", sub:"npm test"},
+    {id:"push", cmd:"Bash", sub:"git push"},
+    {id:"rm",   cmd:"Bash", sub:"rm -rf dist/"}
+  ];
+  var modes = {
+    plan:    {name:"plan", sub:"read only", note:"<b>plan</b> reads and explores but acts on nothing. The mode for &ldquo;show me your plan first.&rdquo;",
+              s:{read:"auto",edit:"deny",fs:"deny",test:"deny",push:"deny",rm:"deny"}},
+    dontAsk: {name:"dontAsk", sub:"allowlist", note:"<b>dontAsk</b> denies everything unless an <b>allow</b> rule matches. Built for locked-down headless runs &mdash; even reads need explicit permission.",
+              s:{read:"deny",edit:"deny",fs:"deny",test:"deny",push:"deny",rm:"deny"}},
+    default: {name:"default", sub:"asks", note:"<b>default</b> auto-approves reads; everything that changes state prompts you. Where you should start.",
+              s:{read:"auto",edit:"ask",fs:"ask",test:"ask",push:"ask",rm:"ask"}},
+    acceptEdits:{name:"acceptEdits", sub:"edits + fs", note:"<b>acceptEdits</b> silently approves edits <em>and filesystem bash</em> &mdash; note <code>rm</code> goes green. Other bash (<code>npm test</code>, <code>git push</code>) still prompts.",
+              s:{read:"auto",edit:"auto",fs:"auto",test:"ask",push:"ask",rm:"auto"}},
+    auto:    {name:"auto", sub:"gated", note:"<b>auto</b> (account-gated) approves whatever it judges safe &mdash; but <b>deny rules still block</b>. Behavior is version-dependent; verify against live docs.",
+              s:{read:"auto",edit:"auto",fs:"auto",test:"auto",push:"auto",rm:"auto"}},
+    bypassPermissions:{name:"bypass", sub:"no checks", note:"<b>bypassPermissions</b> skips every check &mdash; sandboxes only. The one thing that still saves you: <b>deny rules win even here.</b>",
+              s:{read:"auto",edit:"auto",fs:"auto",test:"auto",push:"auto",rm:"auto"}}
+  };
+  var order = ["plan","dontAsk","default","acceptEdits","auto","bypassPermissions"];
+  var labels = {auto:"AUTO",ask:"ASKS",deny:"DENIED"};
+
+  var spec = document.getElementById("spectrum");
+  var matrix = document.getElementById("matrix");
+  var cnote = document.getElementById("cnote");
+
+  order.forEach(function(k){
+    var m = modes[k];
+    var b = document.createElement("button");
+    b.className = "mode"; b.dataset.k = k;
+    b.innerHTML = '<div class="mn">'+m.name+'</div><div class="ms">'+m.sub+'</div>';
+    b.addEventListener("click", function(){ select(k); });
+    spec.appendChild(b);
+  });
+  actions.forEach(function(a){
+    var row = document.createElement("div");
+    row.className = "act"; row.dataset.id = a.id;
+    row.innerHTML = '<span class="cmd"><b>'+a.cmd+'</b> <small>'+a.sub+'</small></span><span class="pill" data-pill></span>';
+    matrix.appendChild(row);
+  });
+
+  function select(k){
+    var m = modes[k];
+    Array.prototype.forEach.call(spec.children, function(c){ c.classList.toggle("active", c.dataset.k===k); });
+    Array.prototype.forEach.call(matrix.children, function(row){
+      var st = m.s[row.dataset.id];
+      var pill = row.querySelector("[data-pill]");
+      pill.className = "pill " + st;
+      pill.textContent = labels[st];
+    });
+    cnote.innerHTML = m.note.replace(/<code>/g,'<code class="inl">');
+  }
+  select("default");
+
+  // ---- progress engine ----
+  var toggles = Array.prototype.slice.call(document.querySelectorAll(".done-toggle"));
+  var tasks = Array.prototype.slice.call(document.querySelectorAll("#tasks li"));
+  var totalUnits = toggles.length + tasks.length + 1;
+  var quizDone = false;
+
+  function tally(){
+    var done = 0;
+    toggles.forEach(function(t){ if(t.classList.contains("done")) done++; });
+    tasks.forEach(function(t){ if(t.classList.contains("done")) done++; });
+    if(quizDone) done++;
+    var pct = Math.round(done/totalUnits*100);
+    document.getElementById("bar").style.width = pct+"%";
+    document.getElementById("metaProg").textContent = "MODULE 02 / 08 · "+pct+"% complete";
+    document.getElementById("ring").style.strokeDashoffset = 88-(88*pct/100);
+    document.getElementById("ringpct").textContent = pct;
+    var f = document.getElementById("float"); f.hidden = (pct===0);
+    var label = document.getElementById("floatlabel");
+    if(pct===0) label.textContent="getting started";
+    else if(pct<50) label.textContent="warming up";
+    else if(pct<100) label.textContent="most of the way";
+    else { label.textContent="module clear — go to 03"; f.style.background="#2E6E5B"; }
+  }
+  toggles.forEach(function(t){
+    t.addEventListener("click", function(){
+      var on = t.classList.toggle("done");
+      t.setAttribute("aria-pressed", on);
+      t.lastChild.textContent = on ? " done" : " mark done";
+      tally();
+    });
+  });
+  tasks.forEach(function(li){ li.addEventListener("click", function(){ li.classList.toggle("done"); tally(); }); });
+
+  document.querySelectorAll(".copy").forEach(function(btn){
+    btn.addEventListener("click", function(){
+      var txt = btn.getAttribute("data-copy");
+      navigator.clipboard && navigator.clipboard.writeText(txt).then(function(){
+        var o = btn.textContent; btn.textContent="copied ✓";
+        setTimeout(function(){ btn.textContent=o; }, 1300);
+      });
+    });
+  });
+
+  var opts = Array.prototype.slice.call(document.querySelectorAll(".opt"));
+  var verdict = document.getElementById("v1");
+  opts.forEach(function(o){
+    o.addEventListener("click", function(){
+      if(quizDone) return;
+      var right = o.getAttribute("data-correct")==="true";
+      opts.forEach(function(x){ x.disabled=true; if(x.getAttribute("data-correct")==="true") x.classList.add("correct"); });
+      if(!right) o.classList.add("wrong");
+      verdict.className = "verdict show " + (right?"right":"nope");
+      verdict.innerHTML = right
+        ? "<b>Correct.</b> acceptEdits auto-approves a defined set of filesystem bash commands &mdash; <code class='inl'>mkdir</code>, <code class='inl'>mv</code>, <code class='inl'>cp</code>, <code class='inl'>rm</code> and friends &mdash; on in-scope paths. It is genuinely not &ldquo;edits only.&rdquo; If <code class='inl'>rm</code> scares you in this mode, add <code class='inl'>ask: [\"Bash(rm:*)\"]</code>."
+        : "<b>No.</b> This is the classic acceptEdits trap. It silently approves filesystem bash &mdash; including <code class='inl'>rm</code> &mdash; on in-scope paths, not just file edits. It wasn&rsquo;t bypass, and destructive commands do <em>not</em> always prompt. Guard it with an explicit <code class='inl'>ask</code> or <code class='inl'>deny</code> rule.";
+      quizDone = true; tally();
+    });
+  });
+
+  tally();
+})();
+</script>
+<script>
+(function(){
+  var t=document.querySelector('.navtoggle'),
+      s=document.querySelector('.sidenav'),
+      c=document.querySelector('.navscrim');
+  if(!t||!s) return;
+  function close(){s.classList.remove('open'); if(c)c.classList.remove('open');}
+  t.addEventListener('click',function(){
+    var o=s.classList.toggle('open'); if(c)c.classList.toggle('open',o);
+  });
+  if(c)c.addEventListener('click',close);
+  s.addEventListener('click',function(e){ if(e.target.closest('a')) close(); });
+  document.addEventListener('keydown',function(e){ if(e.key==='Escape') close(); });
+})();
+</script>
+
+</body>
+</html>
