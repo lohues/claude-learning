@@ -95,7 +95,22 @@
   .legend i{display:inline-block; width:10px; height:10px; border-radius:3px; margin-right:6px; vertical-align:middle}
   .legend .a{background:var(--clay)} .legend .b{background:var(--slate-2); opacity:.5}
 
-  footer{border-top:1px solid var(--line); padding:30px 0 60px; margin-top:40px; font-family:var(--mono); font-size:12px; color:var(--slate-2); display:flex; flex-wrap:wrap; gap:8px 18px}
+  footer{border-top:1px solid var(--line); padding:30px 0 60px; margin-top:40px; font-family:var(--mono); font-size:12px; color:var(--slate-2); display:flex; flex-wrap:wrap; align-items:center; gap:8px 18px}
+
+  /* ---------- trail ---------- */
+  .trail-wrap{position:relative;width:760px;max-width:100%;margin:26px auto 0;height:1880px}
+  .trail-node{position:absolute;transform:translate(-50%,-50%);z-index:3}
+  .trail-card{position:absolute;width:336px;transform:translateY(-50%);z-index:2}
+  @media(max-width:680px){
+    .trail-wrap{width:100%;height:auto;display:flex;flex-direction:column;gap:16px;padding-top:0}
+    .trail-node,.trail-svg-wrap,.trail-start-label,.trail-finish-label{display:none}
+    .trail-card{position:static;width:100%;transform:none}
+  }
+  @media(max-width:540px){
+    #idx-topbar-meta{display:none}
+  }
+  @keyframes opathPulse{0%{box-shadow:0 0 0 0 rgba(201,100,66,.45)}70%{box-shadow:0 0 0 18px rgba(201,100,66,0)}100%{box-shadow:0 0 0 0 rgba(201,100,66,0)}}
+  @keyframes opathPop{0%{transform:scale(.35);opacity:0}60%{transform:scale(1.14)}100%{transform:scale(1);opacity:1}}
 </style>
 </head>
 <body>
@@ -104,87 +119,81 @@
   <div class="wrap topbar-in">
     <button class="navtoggle" aria-label="Toggle module menu" aria-controls="sidenav"><span></span></button>
     <a class="brand" href="index.html"><span class="dot"></span> OPERATOR&rsquo;S&nbsp;PATH</a>
-    <div class="meta">8 MODULES · ALL LIVE</div>
+    <div id="idx-topbar-meta" class="meta" style="display:flex;align-items:center;gap:10px">
+      <span id="idx-count-text">0 / 8 COMPLETE</span>
+      <div style="width:128px;height:7px;border-radius:99px;background:var(--paper-2);overflow:hidden">
+        <div id="idx-pbar" style="height:100%;background:var(--clay);border-radius:99px;width:0%;transition:width .9s cubic-bezier(.5,.15,.1,1)"></div>
+      </div>
+    </div>
   </div>
 </div>
 <aside class="sidenav" id="sidenav" aria-label="All modules">
   <a class="sidehead" href="index.html"><span class="dot"></span> OPERATOR&rsquo;S&nbsp;PATH</a>
   <nav class="sidenav-list">
     <a class="mp home current" href="index.html"><span class="mpn">&#9733;</span><span class="mpl">Path</span></a>
-    <a class="mp" href="01-ground-control.html"><span class="mpn">01</span><span class="mpl">Ground Control</span></a>
-    <a class="mp" href="02-trust-and-permissions.html"><span class="mpn">02</span><span class="mpl">Permissions</span></a>
-    <a class="mp" href="03-context-engineering.html"><span class="mpn">03</span><span class="mpl">Context</span></a>
-    <a class="mp" href="04-skills.html"><span class="mpn">04</span><span class="mpl">Skills</span></a>
-    <a class="mp" href="05-mcp.html"><span class="mpn">05</span><span class="mpl">MCP</span></a>
-    <a class="mp" href="06-hooks.html"><span class="mpn">06</span><span class="mpl">Hooks</span></a>
-    <a class="mp" href="07-parallel.html"><span class="mpn">07</span><span class="mpl">Parallel</span></a>
-    <a class="mp" href="08-agentic-engineering.html"><span class="mpn">08</span><span class="mpl">Agentic Eng.</span></a>
+    <a class="mp" href="01-ground-control.html" data-mn="1"><span class="mpn">01</span><span class="mpl">Ground Control</span></a>
+    <a class="mp" href="02-trust-and-permissions.html" data-mn="2"><span class="mpn">02</span><span class="mpl">Permissions</span></a>
+    <a class="mp" href="03-context-engineering.html" data-mn="3"><span class="mpn">03</span><span class="mpl">Context</span></a>
+    <a class="mp" href="04-skills.html" data-mn="4"><span class="mpn">04</span><span class="mpl">Skills</span></a>
+    <a class="mp" href="05-mcp.html" data-mn="5"><span class="mpn">05</span><span class="mpl">MCP</span></a>
+    <a class="mp" href="06-hooks.html" data-mn="6"><span class="mpn">06</span><span class="mpl">Hooks</span></a>
+    <a class="mp" href="07-parallel.html" data-mn="7"><span class="mpn">07</span><span class="mpl">Parallel</span></a>
+    <a class="mp" href="08-agentic-engineering.html" data-mn="8"><span class="mpn">08</span><span class="mpl">Agentic Eng.</span></a>
   </nav>
 </aside>
 <div class="navscrim" aria-hidden="true"></div>
 
 <header class="hero">
   <div class="wrap">
-    <span class="eyebrow">A self-driven course · built from official docs</span>
+    <span class="eyebrow" id="idx-eyebrow">Your journey &middot; 0% complete</span>
     <h1>Operating Claude Code,<br><span class="thin">one earned step at a time.</span></h1>
-    <p class="lede">Eight modules, resequenced from the original two-session course so each one is a prerequisite for the next. Every claim checked against Anthropic&rsquo;s own documentation; the version-dependent parts flagged as exactly that. Pick up wherever you left off.</p>
+    <p class="lede">Eight modules, in dependency order. Mark each one complete to light up the trail &mdash; your progress is saved on this device, so you always pick up exactly where you left off.</p>
     <div class="stat-row">
-      <div class="stat"><div class="n">8</div><div class="l">modules</div></div>
-      <div class="stat"><div class="n">8</div><div class="l">all live</div></div>
-      <div class="stat"><div class="n">~3h</div><div class="l">full read</div></div>
-      <div class="stat"><div class="n">2.1.x</div><div class="l">docs baseline</div></div>
+      <div class="stat"><div class="n" id="idx-stat-done" style="color:var(--clay-deep)">0</div><div class="l">completed</div></div>
+      <div class="stat"><div class="n" id="idx-stat-left">8</div><div class="l">to go</div></div>
+      <div class="stat"><div class="n" id="idx-stat-pct">0%</div><div class="l">of the path</div></div>
     </div>
+    <div id="idx-cta" style="margin-top:26px"></div>
   </div>
 </header>
 
 <section class="block">
   <div class="wrap">
-    <div class="sec-head"><span class="sec-num">THE PATH</span><h2>Eight modules, in order</h2></div>
-    <p class="sec-sub">The original course front-loads fundamentals into one sitting and scaling into another. This path sequences by dependency &mdash; you won&rsquo;t hit a concept before the thing it relies on.</p>
-    <div class="road">
-      <a class="stop open" href="01-ground-control.html">
-        <span class="idx">1</span>
-        <div><h3>Ground Control</h3><p>The agentic loop, install, your first real session.</p><span class="tag">open · interactive</span></div>
-      </a>
-      <a class="stop open" href="02-trust-and-permissions.html">
-        <span class="idx">2</span>
-        <div><h3>Trust &amp; Permissions</h3><p>Five modes, Shift+Tab, allow/deny rules, settings hierarchy.</p><span class="tag">open · interactive</span></div>
-      </a>
-      <a class="stop open" href="03-context-engineering.html">
-        <span class="idx">3</span>
-        <div><h3>Context Engineering</h3><p>Finite memory, CLAUDE.md, auto memory, compaction.</p><span class="tag">open · highest leverage</span></div>
-      </a>
-      <a class="stop open" href="04-skills.html">
-        <span class="idx">4</span>
-        <div><h3>Skills</h3><p>SKILL.md anatomy, progressive disclosure, authoring.</p><span class="tag">open · interactive</span></div>
-      </a>
-      <a class="stop open" href="05-mcp.html">
-        <span class="idx">5</span>
-        <div><h3>MCP &amp; the Outside World</h3><p>Transports, setup, and when not to use it.</p><span class="tag">open · interactive</span></div>
-      </a>
-      <a class="stop open" href="06-hooks.html">
-        <span class="idx">6</span>
-        <div><h3>Hooks</h3><p>Lifecycle events, deterministic guardrails.</p><span class="tag">open · interactive</span></div>
-      </a>
-      <a class="stop open" href="07-parallel.html">
-        <span class="idx">7</span>
-        <div><h3>Going Parallel</h3><p>Subagents vs. agent teams vs. worktrees.</p><span class="tag">open · interactive</span></div>
-      </a>
-      <a class="stop open" href="08-agentic-engineering.html">
-        <span class="idx">8</span>
-        <div><h3>Agentic Engineering</h3><p>Five pillars, compound engineering, plugins.</p><span class="tag">open · finale</span></div>
-      </a>
+    <div class="sec-head"><span class="sec-num">THE&nbsp;TRAIL</span><h2>Eight stops, in order</h2></div>
+    <p class="sec-sub">Follow it top to bottom. Finish a stop, mark it complete &mdash; the path fills in behind you and the next stop lights up.</p>
+
+    <div class="trail-wrap" id="trail-wrap">
+
+      <div class="trail-start-label" style="position:absolute;left:180px;top:14px;transform:translate(-50%,0);font-family:var(--mono);font-size:10.5px;font-weight:700;letter-spacing:.14em;color:var(--slate-2);background:var(--paper-2);border-radius:99px;padding:5px 12px;z-index:4">START</div>
+
+      <div class="trail-svg-wrap" style="position:absolute;left:50%;top:0;transform:translateX(-50%);pointer-events:none;z-index:1">
+        <svg id="trail-svg" viewBox="0 0 760 1880" width="760" height="1880" style="overflow:visible">
+          <path id="trail-base" d="M 180 72 C 180 192 580 192 580 312 C 580 432 180 432 180 552 C 180 672 580 672 580 792 C 580 912 180 912 180 1032 C 180 1152 580 1152 580 1272 C 580 1392 180 1392 180 1512 C 180 1632 580 1632 580 1752" fill="none" stroke="#D8D0C0" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+          <path id="trail-fill" d="M 180 72 C 180 192 580 192 580 312 C 580 432 180 432 180 552 C 180 672 580 672 580 792 C 580 912 180 912 180 1032 C 180 1152 580 1152 580 1272 C 580 1392 180 1392 180 1512 C 180 1632 580 1632 580 1752" fill="none" stroke="#C96442" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="1" stroke-dashoffset="1"/>
+        </svg>
+      </div>
+
+      <!-- nodes injected by JS -->
+      <div id="trail-nodes"></div>
+      <!-- cards injected by JS -->
+      <div id="trail-cards"></div>
+
+      <div id="trail-finish" class="trail-finish-label" style="position:absolute;left:580px;top:1814px;transform:translate(-50%,0);font-family:var(--mono);font-size:10.5px;font-weight:700;letter-spacing:.14em;z-index:4;border-radius:99px;padding:5px 12px;color:var(--slate-2);background:var(--paper-2)">FINISH</div>
+
     </div>
-    <div class="legend"><span><i class="a"></i>open now</span><span><i class="b"></i>finale</span></div>
-    <p class="note-line">All eight modules are live. Each opens in its own page; the switcher up top jumps between any of them. Start at 01 or pick up wherever you left off.</p>
+    <div style="text-align:center;margin-top:32px;padding-bottom:8px">
+      <button id="idx-reset-trail" style="background:none;border:none;font-family:var(--mono);font-size:12px;color:var(--slate-2);cursor:pointer;text-decoration:underline;padding:6px 4px">Reset progress</button>
+    </div>
   </div>
 </section>
 
 <footer class="wrap">
-  <span>OPERATOR&rsquo;S PATH · ~/dev/learning/claude</span><span>·</span>
-  <span>verified against code.claude.com/docs</span><span>·</span>
-  <span>Claude Code 2.1.x · June 2026</span>
+  <span>OPERATOR&rsquo;S PATH &middot; ~/dev/learning/claude</span><span>&middot;</span>
+  <span>progress saved on this device</span>
+  <button id="idx-reset" style="margin-left:auto;background:none;border:1px solid var(--line);border-radius:8px;color:var(--slate-2);font-family:var(--mono);font-size:11px;cursor:pointer;padding:7px 12px">Reset progress</button>
 </footer>
+
+<canvas id="idx-canvas" style="position:fixed;inset:0;width:100vw;height:100vh;pointer-events:none;z-index:9999;display:none"></canvas>
 
 <script>
 (function(){
@@ -192,13 +201,264 @@
       s=document.querySelector('.sidenav'),
       c=document.querySelector('.navscrim');
   if(!t||!s) return;
-  function close(){s.classList.remove('open'); if(c)c.classList.remove('open');}
+  function closeNav(){s.classList.remove('open'); if(c)c.classList.remove('open');}
   t.addEventListener('click',function(){
     var o=s.classList.toggle('open'); if(c)c.classList.toggle('open',o);
   });
-  if(c)c.addEventListener('click',close);
-  s.addEventListener('click',function(e){ if(e.target.closest('a')) close(); });
-  document.addEventListener('keydown',function(e){ if(e.key==='Escape') close(); });
+  if(c)c.addEventListener('click',closeNav);
+  s.addEventListener('click',function(e){ if(e.target.closest('a')) closeNav(); });
+  document.addEventListener('keydown',function(e){ if(e.key==='Escape') closeNav(); });
+})();
+</script>
+
+<script>
+(function(){
+  var MODS=[
+    {n:1,title:'Ground Control',desc:'The agentic loop, install, your first real session.',tag:'Foundations',href:'01-ground-control.html'},
+    {n:2,title:'Trust & Permissions',desc:'Five modes, Shift+Tab, allow/deny rules, settings hierarchy.',tag:'Foundations',href:'02-trust-and-permissions.html'},
+    {n:3,title:'Context Engineering',desc:'Finite memory, CLAUDE.md, auto memory, compaction.',tag:'Highest leverage',href:'03-context-engineering.html'},
+    {n:4,title:'Skills',desc:'SKILL.md anatomy, progressive disclosure, authoring.',tag:'Capability',href:'04-skills.html'},
+    {n:5,title:'MCP & the Outside World',desc:'Transports, setup, and when not to use it.',tag:'Capability',href:'05-mcp.html'},
+    {n:6,title:'Hooks',desc:'Lifecycle events, deterministic guardrails.',tag:'Control',href:'06-hooks.html'},
+    {n:7,title:'Going Parallel',desc:'Subagents vs. agent teams vs. worktrees.',tag:'Scaling',href:'07-parallel.html'},
+    {n:8,title:'Agentic Engineering',desc:'Five pillars, compound engineering, plugins.',tag:'Finale',href:'08-agentic-engineering.html'}
+  ];
+  var PTS=[[180,72],[580,312],[180,552],[580,792],[180,1032],[580,1272],[180,1512],[580,1752]];
+  var CARD_W=336;
+  var KEY='opath:progress',particles=[],rafId=null;
+  var idxCanvas=document.getElementById('idx-canvas'),ctx=null;
+  var pathLen=0,nodeLens=[];
+
+  function load(){try{var a=JSON.parse(localStorage.getItem(KEY)||'[]');if(Array.isArray(a))return a.filter(function(x){return x>=1&&x<=8;});}catch(e){}return[];}
+  function save(a){try{localStorage.setItem(KEY,JSON.stringify(a));}catch(e){}}
+
+  function complete(n){
+    var a=load();
+    if(a.indexOf(n)<0)a=a.concat([n]).sort(function(a,b){return a-b;});
+    save(a);render();
+    fireFromNode(n);
+    if(a.length>=8)setTimeout(finale,380);
+  }
+  function undo(n){var a=load().filter(function(x){return x!==n;});save(a);render();}
+  function reset(){save([]);render();}
+
+  function render(){
+    var C=load(),count=C.length,allDone=count>=8;
+    var pct=Math.round(count/8*100);
+    var inSet=function(n){return C.indexOf(n)>=0;};
+    var currentN=null;
+    for(var i=0;i<8;i++){if(!inSet(i+1)){currentN=i+1;break;}}
+
+    // topbar
+    document.getElementById('idx-count-text').textContent=count+' / 8 COMPLETE';
+    document.getElementById('idx-pbar').style.width=pct+'%';
+
+    // hero
+    document.getElementById('idx-eyebrow').textContent='Your journey · '+pct+'% complete';
+    document.getElementById('idx-stat-done').textContent=count;
+    document.getElementById('idx-stat-left').textContent=8-count;
+    document.getElementById('idx-stat-pct').textContent=pct+'%';
+    var cta=document.getElementById('idx-cta');
+    if(allDone){
+      cta.innerHTML='<div style="display:inline-flex;align-items:center;gap:10px;background:#2E6E5B;color:#fff;border-radius:99px;padding:12px 22px;font-family:var(--mono);font-size:13px;font-weight:700">★ Path complete — all 8 modules cleared</div>';
+    } else if(currentN){
+      var nm=MODS[currentN-1];
+      cta.innerHTML='<a href="'+nm.href+'" style="display:inline-flex;align-items:center;gap:11px;background:#FBF9F4;border:1px solid #C96442;border-radius:99px;padding:11px 19px;text-decoration:none;color:#A84E30;font-family:var(--mono);font-size:13px;font-weight:700;box-shadow:0 0 0 4px #F0D9CE"><span style="width:9px;height:9px;border-radius:50%;background:#C96442;flex:0 0 auto"></span> Up next — Module '+currentN+' · '+nm.title+' <span style="color:#928979">↗</span></a>';
+    } else {
+      cta.innerHTML='';
+    }
+
+    // sidenav: add done/current dots
+    var navLinks=document.querySelectorAll('.sidenav-list .mp[data-mn]');
+    navLinks.forEach(function(a){
+      var mn=parseInt(a.getAttribute('data-mn'),10);
+      var dot=a.querySelector('.nav-dot');
+      if(!dot){dot=document.createElement('span');dot.className='nav-dot';a.appendChild(dot);}
+      if(inSet(mn)){
+        dot.style.cssText='width:16px;height:16px;border-radius:50%;background:#2E6E5B;color:#fff;font-size:9px;display:grid;place-items:center;flex:0 0 auto';
+        dot.textContent='✓';
+      } else if(mn===currentN){
+        dot.style.cssText='width:8px;height:8px;border-radius:50%;background:#C96442;flex:0 0 auto';
+        dot.textContent='';
+      } else {
+        dot.style.cssText='display:none';
+        dot.textContent='';
+      }
+    });
+
+    // trail nodes & cards
+    renderTrail(C,currentN,allDone);
+
+    // finish label
+    var fi=document.getElementById('trail-finish');
+    if(fi){fi.style.color=allDone?'#fff':'#928979';fi.style.background=allDone?'#2E6E5B':'#E8E1D4';fi.textContent=allDone?'✓ PATH COMPLETE':'FINISH';}
+  }
+
+  function renderTrail(C,currentN,allDone){
+    var inSet=function(n){return C.indexOf(n)>=0;};
+    var nodesEl=document.getElementById('trail-nodes');
+    var cardsEl=document.getElementById('trail-cards');
+    if(!nodesEl||!cardsEl)return;
+    nodesEl.innerHTML='';cardsEl.innerHTML='';
+
+    MODS.forEach(function(m,i){
+      var x=PTS[i][0],cy=PTS[i][1];
+      var done=inSet(m.n),current=(m.n===currentN),upcoming=(!done&&!current);
+      var side=(i%2===0)?'left':'right';
+      var cardX=(side==='left')?x+50:x-50-CARD_W;
+
+      // node
+      var nd=document.createElement('div');
+      nd.className='trail-node';
+      nd.id='mk-'+m.n;
+      nd.style.left=x+'px';nd.style.top=cy+'px';
+      if(done){
+        nd.innerHTML='<div style="width:52px;height:52px;border-radius:50%;background:#C96442;border:3px solid #F2EEE6;display:grid;place-items:center;box-shadow:0 8px 20px rgba(201,100,66,.32);animation:opathPop .42s ease both"><svg width="22" height="22" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>';
+      } else if(current){
+        nd.innerHTML='<div style="width:54px;height:54px;border-radius:50%;background:#FBF9F4;border:3px solid #C96442;display:grid;place-items:center;color:#A84E30;font-family:var(--mono);font-weight:700;font-size:18px;animation:opathPulse 2.2s infinite">'+m.n+'</div>';
+      } else {
+        nd.innerHTML='<div style="width:44px;height:44px;border-radius:50%;background:#FBF9F4;border:2px solid #C4BAA6;display:grid;place-items:center;color:#928979;font-family:var(--mono);font-weight:700;font-size:16px">'+m.n+'</div>';
+      }
+      nodesEl.appendChild(nd);
+
+      // card
+      var cd=document.createElement('div');
+      cd.className='trail-card';
+      cd.style.left=cardX+'px';cd.style.top=cy+'px';
+      if(done){
+        cd.innerHTML=
+          '<div style="background:#FBF9F4;border:1px solid #F0D9CE;border-radius:14px;padding:16px 18px;box-shadow:0 3px 10px rgba(27,25,21,.05)">'+
+            '<div style="display:flex;align-items:center;gap:10px">'+
+              '<span style="font-family:var(--mono);font-weight:700;font-size:13px;color:#fff;background:#C96442;width:28px;height:28px;border-radius:8px;display:grid;place-items:center;flex:0 0 auto">'+m.n+'</span>'+
+              '<span style="display:inline-flex;align-items:center;gap:5px;font-family:var(--mono);font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#2E6E5B;background:#D6E6DF;border-radius:99px;padding:3px 9px">✓ Completed</span>'+
+            '</div>'+
+            '<h3 style="margin:10px 0 3px;font-family:var(--display);font-weight:600;font-size:18px">'+m.title+'</h3>'+
+            '<p style="margin:0;font-size:13.5px;color:#6E665A;line-height:1.5">'+m.desc+'</p>'+
+            '<div style="display:flex;align-items:center;gap:14px;margin-top:13px">'+
+              '<a href="'+m.href+'" style="display:inline-flex;align-items:center;gap:6px;color:#A84E30;text-decoration:none;font-family:var(--mono);font-size:12px;font-weight:700">Revisit →</a>'+
+              '<button data-undo="'+m.n+'" style="margin-left:auto;background:none;border:none;color:#928979;font-family:var(--mono);font-size:11px;cursor:pointer;text-decoration:underline;padding:4px 2px">Mark incomplete</button>'+
+            '</div>'+
+          '</div>';
+      } else if(current){
+        cd.innerHTML=
+          '<div style="background:#FBF9F4;border:1.5px solid #C96442;border-radius:14px;padding:16px 18px;box-shadow:0 0 0 4px #F0D9CE,0 10px 26px rgba(201,100,66,.16)">'+
+            '<div style="display:flex;align-items:center;gap:10px">'+
+              '<span style="font-family:var(--mono);font-weight:700;font-size:13px;color:#fff;background:#C96442;width:28px;height:28px;border-radius:8px;display:grid;place-items:center;flex:0 0 auto">'+m.n+'</span>'+
+              '<span style="font-family:var(--mono);font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#A84E30;background:#F0D9CE;border-radius:99px;padding:3px 9px">You are here</span>'+
+            '</div>'+
+            '<h3 style="margin:10px 0 3px;font-family:var(--display);font-weight:600;font-size:19px">'+m.title+'</h3>'+
+            '<p style="margin:0;font-size:13.5px;color:#6E665A;line-height:1.5">'+m.desc+'</p>'+
+            '<div style="display:flex;align-items:center;gap:10px;margin-top:14px">'+
+              '<button data-complete="'+m.n+'" style="display:inline-flex;align-items:center;gap:7px;background:#C96442;color:#fff;border:none;border-radius:10px;padding:10px 15px;font-family:var(--mono);font-size:12px;font-weight:700;cursor:pointer;letter-spacing:.02em">✓ Mark complete</button>'+
+              '<a href="'+m.href+'" style="display:inline-flex;align-items:center;gap:6px;color:#6E665A;text-decoration:none;font-family:var(--mono);font-size:12px;font-weight:600;padding:9px 4px">Open →</a>'+
+            '</div>'+
+          '</div>';
+      } else {
+        cd.innerHTML=
+          '<div style="background:#FBF9F4;border:1px solid #D8D0C0;border-radius:14px;padding:16px 18px;opacity:.92">'+
+            '<div style="display:flex;align-items:center;gap:10px">'+
+              '<span style="font-family:var(--mono);font-weight:700;font-size:13px;color:#fff;background:#928979;width:28px;height:28px;border-radius:8px;display:grid;place-items:center;flex:0 0 auto">'+m.n+'</span>'+
+              '<span style="font-family:var(--mono);font-size:10.5px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:#928979">'+m.tag+'</span>'+
+            '</div>'+
+            '<h3 style="margin:10px 0 3px;font-family:var(--display);font-weight:600;font-size:18px">'+m.title+'</h3>'+
+            '<p style="margin:0;font-size:13.5px;color:#6E665A;line-height:1.5">'+m.desc+'</p>'+
+            '<div style="display:flex;align-items:center;gap:10px;margin-top:13px">'+
+              '<button data-complete="'+m.n+'" style="display:inline-flex;align-items:center;gap:7px;background:#FBF9F4;color:#A84E30;border:1px solid #E0BBA9;border-radius:10px;padding:9px 14px;font-family:var(--mono);font-size:12px;font-weight:700;cursor:pointer">Mark complete</button>'+
+              '<a href="'+m.href+'" style="display:inline-flex;align-items:center;gap:6px;color:#6E665A;text-decoration:none;font-family:var(--mono);font-size:12px;font-weight:600;padding:9px 4px">Open →</a>'+
+            '</div>'+
+          '</div>';
+      }
+      cardsEl.appendChild(cd);
+    });
+
+    // wire buttons
+    document.querySelectorAll('[data-complete]').forEach(function(btn){
+      btn.addEventListener('click',function(){complete(parseInt(btn.getAttribute('data-complete'),10));});
+    });
+    document.querySelectorAll('[data-undo]').forEach(function(btn){
+      btn.addEventListener('click',function(){undo(parseInt(btn.getAttribute('data-undo'),10));});
+    });
+
+    // animate path fill
+    animatePath(C);
+  }
+
+  function animatePath(C){
+    var fillPath=document.getElementById('trail-fill');
+    if(!fillPath||!pathLen)return;
+    var inSet=function(n){return C.indexOf(n)>=0;};
+    var furthest=-1;
+    for(var i=0;i<8;i++){if(inSet(i+1))furthest=i;}
+    var off;
+    if(furthest<0){off=pathLen;}
+    else{off=Math.max(0,pathLen-(nodeLens[furthest]||0)-6);}
+    fillPath.style.strokeDasharray=pathLen;
+    fillPath.style.strokeDashoffset=off;
+    fillPath.style.transition='stroke-dashoffset .95s cubic-bezier(.5,.15,.1,1)';
+  }
+
+  function measurePath(){
+    var base=document.getElementById('trail-base');
+    if(!base||!base.getTotalLength)return;
+    var L=base.getTotalLength();
+    pathLen=L;
+    var lens=PTS.map(function(pt){
+      var lo=0,hi=L;
+      for(var i=0;i<42;i++){var m=(lo+hi)/2;if(base.getPointAtLength(m).y<pt[1])lo=m;else hi=m;}
+      return (lo+hi)/2;
+    });
+    nodeLens=lens;
+    animatePath(load());
+  }
+
+  // confetti
+  function ensureCanvas(){
+    var dpr=Math.min(window.devicePixelRatio||1,2);
+    idxCanvas.width=Math.floor(window.innerWidth*dpr);
+    idxCanvas.height=Math.floor(window.innerHeight*dpr);
+    idxCanvas.style.width=window.innerWidth+'px';
+    idxCanvas.style.height=window.innerHeight+'px';
+    ctx=idxCanvas.getContext('2d');
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+  }
+  function burst(cx,cy,n,pw){
+    var cols=['#C96442','#A84E30','#2E6E5B','#D9A441','#E8E1D4','#1B1915'];
+    for(var i=0;i<n;i++){
+      var a=Math.random()*Math.PI*2,sp=Math.random()*pw*7+2;
+      particles.push({x:cx,y:cy,vx:Math.cos(a)*sp*(0.6+Math.random()),vy:Math.sin(a)*sp-(Math.random()*7+4),rot:Math.random()*Math.PI,vr:(Math.random()*2-1)*0.32,size:Math.random()*7+5,color:cols[(Math.random()*cols.length)|0],life:70+Math.random()*40});
+    }
+    if(!rafId)loop();
+  }
+  function fireFromNode(n){
+    idxCanvas.style.display='block';ensureCanvas();
+    var el=document.getElementById('mk-'+n);
+    var cx=window.innerWidth/2,cy=window.innerHeight*0.4;
+    if(el){var r=el.getBoundingClientRect();cx=r.left+r.width/2;cy=r.top+r.height/2;}
+    burst(cx,cy,84,1.4);
+  }
+  function finale(){
+    idxCanvas.style.display='block';ensureCanvas();
+    var W=window.innerWidth,H=window.innerHeight;
+    burst(W*0.5,H*0.42,130,1.9);
+    for(var i=0;i<5;i++)(function(i){setTimeout(function(){burst(W*(0.12+0.18*i),H*0.26,64,1.7);},i*150);})(i);
+  }
+  function loop(){
+    var w=window.innerWidth,h=window.innerHeight;
+    ctx.clearRect(0,0,w,h);
+    particles.forEach(function(p){p.vy+=0.2;p.vx*=0.995;p.x+=p.vx;p.y+=p.vy;p.rot+=p.vr;p.life--;});
+    particles=particles.filter(function(p){return p.life>0&&p.y<h+80;});
+    particles.forEach(function(p){ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.rot);ctx.globalAlpha=Math.max(0,Math.min(1,p.life/22));ctx.fillStyle=p.color;ctx.fillRect(-p.size/2,-p.size/2,p.size,p.size*0.62);ctx.restore();});
+    if(particles.length){rafId=requestAnimationFrame(loop);}else{rafId=null;ctx.clearRect(0,0,w,h);idxCanvas.style.display='none';}
+  }
+
+  function confirmReset(){if(confirm('Reset all progress?'))reset();}
+  document.getElementById('idx-reset').addEventListener('click',confirmReset);
+  document.getElementById('idx-reset-trail').addEventListener('click',confirmReset);
+  window.addEventListener('storage',function(e){if(e.key===KEY)render();});
+  window.addEventListener('resize',function(){if(ctx)ensureCanvas();});
+
+  render();
+  requestAnimationFrame(measurePath);
 })();
 </script>
 
