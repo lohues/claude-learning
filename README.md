@@ -1,5 +1,7 @@
 # Operator's Path · Claude Code
 
+Live at **https://claude-learning.louisdav.id/**
+
 A self-contained static site for learning Claude Code — from basic setup to agentic engineering.
 
 ## Modules
